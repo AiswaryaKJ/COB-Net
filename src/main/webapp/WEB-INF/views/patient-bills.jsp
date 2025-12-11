@@ -175,20 +175,12 @@
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye me-1"></i>View Details
                                 </a>
-<<<<<<< HEAD
                                 <!-- Payment button only for Processed status with amount due -->
                                 <% if ("Processed".equals(claimStatus) && outOfPocket != null && outOfPocket > 0) { %>
                                     <a href="pay?patientId=${patientId}&claimId=<%= claimId %>" 
                                        class="btn btn-sm btn-success">
                                         <i class="fas fa-credit-card me-1"></i>Pay Now
                                     </a>
-=======
-                                <% if ("Pending Payment".equals(billStatus) && copayAmount != null) { %>
-									<a href="/patient/pay?patientId=${patientId}&claimId=<%= claimId %>" 
-									   class="btn btn-sm btn-success">
-									    <i class="fas fa-credit-card me-1"></i>Pay Copay
-									</a>
->>>>>>> 69f0cfad08c147efed0b8b2186104e80f39902e5
                                 <% } %>
                             </div>
                         </div>
