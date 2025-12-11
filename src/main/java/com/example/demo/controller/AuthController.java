@@ -51,7 +51,8 @@ public class AuthController {
             case "ADMIN":
                 return "admin";   // /WEB-INF/views/admin.jsp
             case "PROVIDER":
-                return "provider"; // /WEB-INF/views/provider.jsp
+                return "redirect:/provider/welcome"; // handled by ProviderController
+// /WEB-INF/views/provider.jsp
             case "PATIENT":
                 return "patient";  // /WEB-INF/views/patient.jsp
             case "PAYER":
