@@ -1,212 +1,373 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.example.demo.bean.Provider" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COBNet - Admin Dashboard</title>
-    <link rel="stylesheet" 
+    <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            background: #f8f9fa;
-            color: #212529;
-            font-size: 14px;
-        }
-        /* Sidebar */
+        /* --- GLOBAL RESET & BASE STYLES --- */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; }
+        a { text-decoration: none; color: inherit; }
+        h2, h3 { color: #1f2937; }
+
+        /* --- LAYOUT: SIDEBAR & MAIN --- */
+        .dashboard-container { display: flex; min-height: 100vh; }
+
+        /* Sidebar Styling */
         .sidebar {
-            width: 220px;
-            background: #1c1f23;
-            color: #dee2e6;
-            height: 100vh;
-            position: fixed;
-            top: 0; left: 0;
+            width: 250px;
+            background-color: #1f2937; /* Darker primary color */
+            color: #ffffff;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            padding-top: 20px;
+            position: fixed; /* Keep sidebar fixed */
+            height: 100%;
         }
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 25px;
-            font-size: 18px;
-            color: #0d6efd;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            color: #4ade80; /* Highlight color for logo */
+            font-weight: 700;
         }
         .sidebar a {
-            color: #dee2e6;
-            padding: 10px 18px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            transition: background 0.2s ease;
-            font-size: 13px;
+            padding: 15px 20px;
+            display: block;
+            font-size: 1.0em;
+            transition: background-color 0.3s, color 0.3s;
+            border-left: 5px solid transparent;
         }
-        .sidebar a:hover { background: #343a40; }
-        .sidebar i { margin-right: 8px; }
+        .sidebar a:hover {
+            background-color: #374151; /* Lighter background on hover */
+            color: #ffffff;
+            border-left-color: #4ade80; /* Highlight border on hover */
+        }
+        .sidebar a i {
+            margin-right: 10px;
+        }
 
-        /* Main */
-        .main { margin-left: 220px; padding: 20px; }
+        /* Main Content Styling */
+        .main {
+            margin-left: 250px; /* Offset for the fixed sidebar */
+            flex-grow: 1;
+            padding: 30px;
+        }
+        .main h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        /* Header Styling */
         header {
-            background: #fff;
-            padding: 12px 18px;
-            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        header .logo {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        header a {
+            color: #ef4444; /* Red color for logout */
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        header a:hover {
+            background-color: #fee2e2;
+        }
+
+        /* --- CARD STYLING --- */
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Soft shadow */
+        }
+        .card h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        header .logo { font-weight: 600; font-size: 16px; color: #0d6efd; }
-        header a { color: #0d6efd; text-decoration: none; font-weight: 500; font-size: 13px; }
 
-        h2, h3 { font-weight: 500; margin-top: 20px; font-size: 15px; }
-
-        /* Tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-            background: #fff;
-            border-radius: 6px;
-            overflow: hidden;
-            font-size: 13px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #e9ecef;
-        }
-        th { background: #f1f3f5; font-weight: 500; }
-        tr:hover { background: #f8f9fa; }
-
-        /* Buttons */
+        /* --- BUTTON STYLING --- */
         .btn {
-            padding: 6px 10px;
+            padding: 8px 16px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 12px;
-            transition: background 0.2s ease;
+            font-weight: 600;
+            transition: background-color 0.3s, opacity 0.3s;
+            text-align: center;
+            display: inline-block;
+            font-size: 0.9em;
         }
-        .btn-add { background: #0d6efd; color: #fff; }
-        .btn-edit { background: #ffc107; color: #212529; }
-        .btn-delete { background: #dc3545; color: #fff; }
-        .btn:hover { opacity: 0.9; }
+        .btn-add { background-color: #10b981; color: #ffffff; } /* Green */
+        .btn-add:hover { background-color: #059669; }
 
-        /* Chart container */
-        .chart-container {
-            background: #fff;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            height: 300px; /* fixed height */
+        .btn-edit { background-color: #3b82f6; color: #ffffff; margin-right: 5px; } /* Blue */
+        .btn-edit:hover { background-color: #2563eb; }
+
+        .btn-delete { background-color: #ef4444; color: #ffffff; } /* Red */
+        .btn-delete:hover { background-color: #dc2626; }
+
+        /* --- TABLE STYLING --- */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
         }
-        canvas { max-height: 250px; }
+        thead th {
+            background-color: #f3f4f6;
+            color: #374151;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 0.9em;
+        }
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb; /* Subtle zebra striping */
+        }
+        tbody tr:hover {
+            background-color: #f0f4f7;
+        }
+        tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            font-size: 0.9em;
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            overflow: auto;
+        }
+        .modal-content {
+            background: #ffffff;
+            margin: 5% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px; /* Max width for a clean look */
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #9ca3af;
+            transition: color 0.3s;
+        }
+        .close:hover {
+            color: #333;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .form-field { margin-bottom: 15px; }
+        .form-field label { display: block; font-weight: 600; margin-bottom: 5px; color: #4b5563; }
+        .form-field input {
+            width: calc(100% - 12px);
+            padding: 8px 6px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-field input:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2>COBNet</h2>
-        <a href="#"><i class="fas fa-user-md"></i> Providers</a>
-        <a href="#"><i class="fas fa-file-medical"></i> Claims</a>
-        <a href="#"><i class="fas fa-clipboard-list"></i> Audit Logs</a>
-        <a href="#"><i class="fas fa-chart-line"></i> Analytics</a>
-        <a href="#"><i class="fas fa-shield-alt"></i> Compliance</a>
-        <a href="/auth/login"><i class="fas fa-sign-out-alt"></i> Logout</a>
+
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>COBNet</h2>
+            <a href="#"><i class="fas fa-user-md"></i> Providers</a>
+            <a href="#"><i class="fas fa-file-medical"></i> Claims</a>
+            <a href="#"><i class="fas fa-clipboard-list"></i> Audit Logs</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Analytics</a>
+            <div style="margin-top: auto;">
+                 <a href="/auth/login" style="color: #ef4444; border-left-color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <div class="main">
+            <header>
+                <div class="logo">Admin Dashboard</div>
+            </header>
+
+            <h2>Welcome, Admin</h2>
+
+            <div class="card">
+                <h3>
+                    <span><i class="fas fa-user-md"></i> Manage Providers</span>
+                    <button class="btn btn-add" onclick="openModal('addProviderModal')"><i class="fas fa-plus"></i> Add Provider</button>
+                </h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider ID</th>
+                            <th>Name</th>
+                            <th>Specialty</th>
+                            <th>Status</th>
+                            <th>NPI</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <%
+                            List<Provider> providers = (List<Provider>) request.getAttribute("providers");
+                            if (providers != null) {
+                                for (Provider provider : providers) {
+                        %>
+                            <tr>
+                                <td><%= provider.getProviderId() %></td>
+                                <td><%= provider.getName() %></td>
+                                <td><%= provider.getSpecialty() %></td>
+                                <td><%= provider.getNetworkStatus() %></td>
+                                <td><%= provider.getNpi() %></td>
+                                <td>
+                                    <button class="btn btn-edit"
+                                            onclick="openEditModal('<%= provider.getProviderId() %>',
+                                                                   '<%= provider.getName() %>',
+                                                                   '<%= provider.getSpecialty() %>',
+                                                                   '<%= provider.getNetworkStatus() %>',
+                                                                   '<%= provider.getNpi() %>')"><i class="fas fa-edit"></i> Edit</button>
+                                    <a href="/admin/delete/<%= provider.getProviderId() %>" class="btn btn-delete"
+                                       onclick="return confirm('Are you sure you want to delete this provider?')"><i class="fas fa-trash-alt"></i> Delete</a>
+                                </td>
+                            </tr>
+                        <%
+                                }
+                            } else {
+                        %>
+                            <tr><td colspan="6" style="text-align:center; padding: 20px;">No providers found.</td></tr>
+                        <%
+                            }
+                        %>
+                    </tbody>
+                </table>
+            </div>
+            
+            </div>
     </div>
 
-    <!-- Main -->
-    <div class="main">
-        <header>
-            <div class="logo">Admin Dashboard</div>
-            <a href="/auth/login">Logout</a>
-        </header>
+    <div id="addProviderModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('addProviderModal')">&times;</span>
+        <h3>Add New Provider</h3>
+        <form action="/admin/add" method="post">
+          <div class="form-field">
+            <label for="addName">Name</label>
+            <input type="text" name="name" id="addName" required/>
+          </div>
+          <div class="form-field">
+            <label for="addSpecialty">Specialty</label>
+            <input type="text" name="specialty" id="addSpecialty" required/>
+          </div>
+          <div class="form-field">
+            <label for="addNetworkStatus">Status</label>
+            <input type="text" name="networkStatus" id="addNetworkStatus" required/>
+          </div>
+          <div class="form-field">
+            <label for="addNpi">NPI</label>
+            <input type="text" name="npi" id="addNpi" required/>
+          </div>
+          <button type="submit" class="btn btn-add" style="width: 100%; margin-top: 15px;">Save Provider</button>
+        </form>
+      </div>
+    </div>
 
-        <h2>Welcome, Admin</h2>
-        <p>${message}</p>
-
-        <!-- CRUD Providers -->
-        <h3>Manage Providers</h3>
-        <button class="btn btn-add">+ Add Provider</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>Provider ID</th>
-                    <th>Name</th>
-                    <th>Specialization</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>101</td><td>Dr. Smith</td><td>Cardiology</td><td>Active</td>
-                    <td><button class="btn btn-edit">Edit</button> <button class="btn btn-delete">Delete</button></td></tr>
-                <tr><td>102</td><td>Dr. Johnson</td><td>Orthopedics</td><td>Inactive</td>
-                    <td><button class="btn btn-edit">Edit</button> <button class="btn btn-delete">Delete</button></td></tr>
-            </tbody>
-        </table>
-
-        <!-- Claims -->
-        <h3>Recent Claims</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Claim ID</th>
-                    <th>Patient</th>
-                    <th>Provider</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>C-5001</td><td>Aiswarya</td><td>Dr. Smith</td><td>$1200</td><td>Approved</td></tr>
-                <tr><td>C-5002</td><td>Ayisha</td><td>Dr. Johnson</td><td>$800</td><td>Pending</td></tr>
-            </tbody>
-        </table>
-
-        <!-- Audit Logs -->
-        <h3>Audit Logs</h3>
-        <table>
-            <thead>
-                <tr><th>Timestamp</th><th>User</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>2025-12-10 14:32</td><td>Admin</td><td>Deleted Provider #102</td></tr>
-                <tr><td>2025-12-10 14:10</td><td>Admin</td><td>Approved Claim #C-5001</td></tr>
-            </tbody>
-        </table>
-
-        <!-- Analytics -->
-        <div class="chart-container">
-            <h3>Claims Trend</h3>
-            <canvas id="claimsChart"></canvas>
-        </div>
+    <div id="editProviderModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('editProviderModal')">&times;</span>
+        <h3>Edit Provider Details</h3>
+        <form action="/admin/edit" method="post">
+          <input type="hidden" name="providerId" id="editProviderId"/>
+          <div class="form-field">
+            <label for="editName">Name</label>
+            <input type="text" name="name" id="editName" required/>
+          </div>
+          <div class="form-field">
+            <label for="editSpecialty">Specialty</label>
+            <input type="text" name="specialty" id="editSpecialty" required/>
+          </div>
+          <div class="form-field">
+            <label for="editStatus">Status</label>
+            <input type="text" name="networkStatus" id="editStatus" required/>
+          </div>
+          <div class="form-field">
+            <label for="editNpi">NPI</label>
+            <input type="text" name="npi" id="editNpi" required/>
+          </div>
+          <button type="submit" class="btn btn-edit" style="width: 100%; margin-top: 15px;">Update Provider</button>
+        </form>
+      </div>
     </div>
 
     <script>
-        // Chart.js example with controlled bar size
-        const ctx = document.getElementById('claimsChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan','Feb','Mar','Apr','May','Jun'],
-                datasets: [{
-                    label: 'Claims Processed',
-                    data: [20, 35, 40, 50, 65, 70],
-                    backgroundColor: '#0d6efd',
-                    barThickness: 25,   // controlled bar width
-                    maxBarThickness: 30
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
+        // --- Modal Functions ---
+        function openModal(id) {
+          document.getElementById(id).style.display = 'block';
+        }
+        function closeModal(id) {
+          document.getElementById(id).style.display = 'none';
+        }
+        function openEditModal(id, name, specialty, status, npi) {
+          document.getElementById('editProviderId').value = id;
+          document.getElementById('editName').value = name;
+          document.getElementById('editSpecialty').value = specialty;
+          document.getElementById('editStatus').value = status;
+          document.getElementById('editNpi').value = npi;
+          openModal('editProviderModal');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+          if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+          }
+        }
     </script>
 </body>
 </html>

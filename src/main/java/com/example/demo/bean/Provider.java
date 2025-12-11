@@ -22,6 +22,9 @@ public class Provider {
 
     @Column(name = "npi", unique = true, length = 20)
     private String npi;
+    
+    @OneToOne(mappedBy = "provider", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Credentials credentials;
 
     // Getters and Setters
     public int getProviderId() { return providerId; }

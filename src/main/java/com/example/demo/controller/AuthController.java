@@ -16,13 +16,15 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
-	 @Autowired
-     PatientRepository patientRepository;
-     @Autowired
-     ProviderRepository providerRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private ProviderRepository providerRepository;
 
     private final CredentialRepository credentialsRepository;
-    private final PasswordEncoder passwordEncoder;    
+    private final PasswordEncoder passwordEncoder;
 
     public AuthController(CredentialRepository credentialsRepository, PasswordEncoder passwordEncoder) {
         this.credentialsRepository = credentialsRepository;
@@ -40,28 +42,25 @@ public class AuthController {
     public String login(@RequestParam String username,
                         @RequestParam String password,
                         Model model) {
-        Credentials stored = credentialsRepository.findByUsername(username)
-                .orElse(null);
+        Credentials stored = credentialsRepository.findByUsername(username).orElse(null);
 
         if (stored != null && passwordEncoder.matches(password, stored.getPassword())) {
             model.addAttribute("message", "Login successful! Role: " + stored.getRole());
 
-            // Redirect based on role — no welcome.jsp
+            // Redirect based on role
             switch (stored.getRole().toUpperCase()) {
-            case "ADMIN":
-                return "admin";   // /WEB-INF/views/admin.jsp
-            case "PROVIDER":
-                return "redirect:/provider/welcome"; // handled by ProviderController
-// /WEB-INF/views/provider.jsp
-            case "PATIENT":
-                return "patient";  // /WEB-INF/views/patient.jsp
-            case "PAYER":
-                return "payer";    // /WEB-INF/views/payer.jsp
-            default:
-                model.addAttribute("error", "Unknown role");
-                return "login";
-        }
-
+                case "ADMIN":
+                    return "redirect:/admin/dashboard";   // /WEB-INF/views/admin.jsp
+                case "PROVIDER":
+                    return "redirect:/provider/welcome"; // handled by ProviderController
+                case "PATIENT":
+                    return "patient";  // /WEB-INF/views/patient.jsp
+                case "PAYER":
+                    return "payer";    // /WEB-INF/views/payer.jsp
+                default:
+                    model.addAttribute("error", "Unknown role");
+                    return "login";
+            }
         } else {
             model.addAttribute("error", "Invalid username or password");
             return "login"; // reload login.jsp with error
@@ -93,14 +92,19 @@ public class AuthController {
         credentials.setUsername(username);
         credentials.setPassword(passwordEncoder.encode(password));
         credentials.setRole(role);
-        
-       
 
         if ("PATIENT".equalsIgnoreCase(role)) {
             if (patientId == null || !patientRepository.existsById(patientId)) {
                 model.addAttribute("error", "Invalid Patient ID. Please enter a valid one.");
                 return "register";
             }
+
+            // Check if patient already has credentials
+            if (credentialsRepository.findByPatient_PatientId(patientId).isPresent()) {
+                model.addAttribute("error", "This Patient ID is already registered!");
+                return "register";
+            }
+
             Patient patient = patientRepository.findById(patientId).orElseThrow();
             credentials.setPatient(patient);
 
@@ -109,6 +113,13 @@ public class AuthController {
                 model.addAttribute("error", "Invalid Provider ID. Please enter a valid one.");
                 return "register";
             }
+
+            // Check if provider already has credentials
+            if (credentialsRepository.findByProvider_ProviderId(providerId).isPresent()) {
+                model.addAttribute("error", "This Provider ID is already registered!");
+                return "register";
+            }
+
             Provider provider = providerRepository.findById(providerId).orElseThrow();
             credentials.setProvider(provider);
 
