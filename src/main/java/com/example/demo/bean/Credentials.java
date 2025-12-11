@@ -21,8 +21,33 @@ public class Credentials {
     @Column(name = "role", nullable = false, length = 20)
     private String role;
     
+    @OneToOne
+    @JoinColumn(name = "patient_id", referencedColumnName = "patient_id")
+    private Patient patient;
 
-    public String getPassword() {
+    // Foreign key column provider_id in Credentials table
+    @OneToOne
+    @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
+    private Provider provider;
+    
+
+    public Patient getPatient() {
+		return patient;
+	}
+
+	public void setPatient(Patient patient) {
+		this.patient = patient;
+	}
+
+	public Provider getProvider() {
+		return provider;
+	}
+
+	public void setProvider(Provider provider) {
+		this.provider = provider;
+	}
+
+	public String getPassword() {
         return password;
     }
 
