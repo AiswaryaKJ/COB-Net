@@ -54,8 +54,14 @@ public class AuthController {
                 return "redirect:/provider/welcome"; // handled by ProviderController
 // /WEB-INF/views/provider.jsp
             case "PATIENT":
-                return "patient";  // /WEB-INF/views/patient.jsp
-            case "PAYER":
+            	if (stored.getPatient() != null) {
+                    int patientId = stored.getPatient().getPatientId();
+                    return "redirect:/patient/dashboard?patientId=" + patientId;
+                } else {
+                    model.addAttribute("error", "No patient linked to this account");
+                    return "login";
+                }
+            	case "PAYER":
                 return "payer";    // /WEB-INF/views/payer.jsp
             default:
                 model.addAttribute("error", "Unknown role");
