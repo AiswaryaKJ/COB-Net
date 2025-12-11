@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/insurer")
@@ -78,5 +79,11 @@ public class InsurerController {
             model.addAttribute("error", "Settlement not found");
             return "error";
         }
+    }
+    
+    @GetMapping("/test-calculation")
+    @ResponseBody
+    public Map<String, Object> testCalculation() {
+        return insurerService.testCalculationExample();
     }
 }

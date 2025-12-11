@@ -1,7 +1,6 @@
 package com.example.demo.bean;
 
 import java.util.List;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -36,10 +35,18 @@ public class InsurancePlan {
 
     @Column(name = "coinsurance", nullable = false)
     private double coinsurance;
+    
+    // NEW: Out of Pocket Maximum
+    @Column(name = "out_of_pocket_max", nullable = false)
+    private double outOfPocketMax = 5000.00;
 
     @OneToMany(mappedBy = "insurancePlan")
     private List<PatientCoverage> patientCoverages;
 
+    // Constructors
+    public InsurancePlan() {
+        this.outOfPocketMax = 5000.00;
+    }
 
     // Getters and Setters
     public int getPlanId() { return planId; }
@@ -68,4 +75,15 @@ public class InsurancePlan {
 
     public double getCoinsurance() { return coinsurance; }
     public void setCoinsurance(double coinsurance) { this.coinsurance = coinsurance; }
+    
+    // NEW: OOP Max
+    public double getOutOfPocketMax() { return outOfPocketMax; }
+    public void setOutOfPocketMax(double outOfPocketMax) { 
+        this.outOfPocketMax = outOfPocketMax; 
+    }
+
+    public List<PatientCoverage> getPatientCoverages() { return patientCoverages; }
+    public void setPatientCoverages(List<PatientCoverage> patientCoverages) { 
+        this.patientCoverages = patientCoverages; 
+    }
 }

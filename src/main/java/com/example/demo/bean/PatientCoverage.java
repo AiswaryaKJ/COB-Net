@@ -23,12 +23,19 @@ public class PatientCoverage {
     @Column(name = "termination_date")
     private LocalDate terminationDate;
     
-    // NEW: Deductible Tracking
+    // Deductible tracking
     @Column(name = "deductible_paid_this_year")
     private Double deductiblePaidThisYear = 0.0;
     
     @Column(name = "deductible_remaining")
     private Double deductibleRemaining;
+    
+    // OOP Max tracking PER PLAN
+    @Column(name = "oop_paid_this_year")
+    private Double oopPaidThisYear = 0.0;
+    
+    @Column(name = "oop_remaining")
+    private Double oopRemaining;
     
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false, insertable = false, updatable = false)
@@ -38,7 +45,13 @@ public class PatientCoverage {
     @JoinColumn(name = "plan_id", nullable = false, insertable = false, updatable = false)
     private InsurancePlan insurancePlan;
 
-    // Updated Getters and Setters
+    // Constructor to initialize
+    public PatientCoverage() {
+        this.deductiblePaidThisYear = 0.0;
+        this.oopPaidThisYear = 0.0;
+    }
+    
+    // Getters and Setters
     public int getPatientId() { return patientId; }
     public void setPatientId(int patientId) { this.patientId = patientId; }
 
@@ -54,10 +67,39 @@ public class PatientCoverage {
     public LocalDate getTerminationDate() { return terminationDate; }
     public void setTerminationDate(LocalDate terminationDate) { this.terminationDate = terminationDate; }
     
-    // New getters and setters
-    public Double getDeductiblePaidThisYear() { return deductiblePaidThisYear; }
-    public void setDeductiblePaidThisYear(Double deductiblePaidThisYear) { this.deductiblePaidThisYear = deductiblePaidThisYear; }
+    // Deductible getters and setters
+    public Double getDeductiblePaidThisYear() { 
+        return deductiblePaidThisYear != null ? deductiblePaidThisYear : 0.0; 
+    }
     
-    public Double getDeductibleRemaining() { return deductibleRemaining; }
-    public void setDeductibleRemaining(Double deductibleRemaining) { this.deductibleRemaining = deductibleRemaining; }
+    public void setDeductiblePaidThisYear(Double deductiblePaidThisYear) { 
+        this.deductiblePaidThisYear = deductiblePaidThisYear != null ? deductiblePaidThisYear : 0.0; 
+    }
+    
+    public Double getDeductibleRemaining() { 
+        return deductibleRemaining; 
+    }
+    
+    public void setDeductibleRemaining(Double deductibleRemaining) { 
+        this.deductibleRemaining = deductibleRemaining; 
+    }
+    
+    // OOP getters and setters
+    public Double getOopPaidThisYear() { 
+        return oopPaidThisYear != null ? oopPaidThisYear : 0.0; 
+    }
+    
+    public void setOopPaidThisYear(Double oopPaidThisYear) { 
+        this.oopPaidThisYear = oopPaidThisYear; 
+    }
+    
+    public Double getOopRemaining() { return oopRemaining; }
+    public void setOopRemaining(Double oopRemaining) { this.oopRemaining = oopRemaining; }
+    
+    // Relationship getters and setters
+    public Patient getPatient() { return patient; }
+    public void setPatient(Patient patient) { this.patient = patient; }
+    
+    public InsurancePlan getInsurancePlan() { return insurancePlan; }
+    public void setInsurancePlan(InsurancePlan insurancePlan) { this.insurancePlan = insurancePlan; }
 }

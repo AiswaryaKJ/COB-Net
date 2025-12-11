@@ -51,6 +51,16 @@ public class Settlement {
     @Column(name = "total_patient_responsibility")
     private double totalPatientResponsibility;
     
+    // OOP Max Impact Tracking
+    @Column(name = "primary_oop_applied")
+    private Double primaryOopApplied = 0.0;
+    
+    @Column(name = "secondary_oop_applied")
+    private Double secondaryOopApplied = 0.0;
+    
+    @Column(name = "total_oop_savings")
+    private Double totalOopSavings = 0.0;
+    
     // Insurance Payments
     @Column(name = "primary_insurance_paid")
     private double primaryInsurancePaid;
@@ -81,6 +91,9 @@ public class Settlement {
     // Constructors
     public Settlement() {
         this.processedDate = LocalDate.now();
+        this.primaryOopApplied = 0.0;
+        this.secondaryOopApplied = 0.0;
+        this.totalOopSavings = 0.0;
     }
     
     // Getters and Setters
@@ -122,6 +135,16 @@ public class Settlement {
     
     public double getTotalPatientResponsibility() { return totalPatientResponsibility; }
     public void setTotalPatientResponsibility(double totalPatientResponsibility) { this.totalPatientResponsibility = totalPatientResponsibility; }
+    
+    // OOP Max Getters and Setters
+    public Double getPrimaryOopApplied() { return primaryOopApplied; }
+    public void setPrimaryOopApplied(Double primaryOopApplied) { this.primaryOopApplied = primaryOopApplied; }
+    
+    public Double getSecondaryOopApplied() { return secondaryOopApplied; }
+    public void setSecondaryOopApplied(Double secondaryOopApplied) { this.secondaryOopApplied = secondaryOopApplied; }
+    
+    public Double getTotalOopSavings() { return totalOopSavings; }
+    public void setTotalOopSavings(Double totalOopSavings) { this.totalOopSavings = totalOopSavings; }
     
     public double getPrimaryInsurancePaid() { return primaryInsurancePaid; }
     public void setPrimaryInsurancePaid(double primaryInsurancePaid) { this.primaryInsurancePaid = primaryInsurancePaid; }
