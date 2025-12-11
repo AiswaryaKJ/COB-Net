@@ -140,10 +140,10 @@
                                     <i class="fas fa-eye me-1"></i>View Details
                                 </a>
                                 <% if ("Pending Payment".equals(billStatus) && copayAmount != null) { %>
-                                    <a href="pay?patientId=${patientId}&claimId=<%= claimId %>" 
-                                       class="btn btn-sm btn-success">
-                                        <i class="fas fa-credit-card me-1"></i>Pay Copay
-                                    </a>
+									<a href="/patient/pay?patientId=${patientId}&claimId=<%= claimId %>" 
+									   class="btn btn-sm btn-success">
+									    <i class="fas fa-credit-card me-1"></i>Pay Copay
+									</a>
                                 <% } %>
                             </div>
                         </div>
