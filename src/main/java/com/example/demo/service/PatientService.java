@@ -99,7 +99,7 @@ public class PatientService {
         return null;
     }
     
-    // Get ALL bills (pending and processed)
+ // Get ALL bills (pending and processed) - MODIFIED VERSION
     public List<Map<String, Object>> getAllBills(int patientId) {
         List<Map<String, Object>> allBills = new ArrayList<>();
         
@@ -107,12 +107,13 @@ public class PatientService {
             // Get all claims for this patient
             List<Claim> allClaims = claimRepository.findByPatientId(patientId);
             
-            // Get primary insurance copay
+            // Get primary insurance copay (for information only, not for payment)
             Double primaryCopay = getPrimaryInsuranceCopay(patientId);
             
             for (Claim claim : allClaims) {
                 Map<String, Object> bill = new HashMap<>();
                 
+                // Basic claim information
                 bill.put("claimId", claim.getClaimId());
                 bill.put("billedAmount", claim.getBilledAmount());
                 bill.put("claimDate", claim.getClaimDate());
@@ -126,44 +127,46 @@ public class PatientService {
                     bill.put("providerName", claim.getProvider().getName());
                 }
                 
-                // Determine bill status and message
+                // Determine bill status and message - MODIFIED LOGIC
                 String status = claim.getStatus();
                 Double outOfPocket = claim.getFinalOutOfPocket();
                 
                 String billStatus = "";
                 String statusMessage = "";
+                boolean showCopayButton = false;
+                boolean showProcessingNotification = false;
                 
                 if ("Submitted".equals(status)) {
+                    billStatus = "Submitted";
+                    statusMessage = "Claim submitted - Processing in progress";
+                    showProcessingNotification = true;
+                    
+                    // SHOW copay amount for information only, but NO PAYMENT REQUIRED
+                    bill.put("copayAmount", primaryCopay);
+                    
+                    // If outOfPocket is null/0, claim is still processing
                     if (outOfPocket == null || outOfPocket == 0.0) {
-                        billStatus = "Pending Payment";
-                        statusMessage = "Your copay is pending";
-                        bill.put("copayAmount", primaryCopay);
-                    } else if (outOfPocket != null && primaryCopay != null && 
-                              Math.abs(outOfPocket - primaryCopay) < 0.01) {
-                        billStatus = "Waiting for Processing";
-                        statusMessage = "Copay paid. Waiting for provider to process";
-                        bill.put("copayAmount", primaryCopay);
-                        bill.put("copayPaid", true);
-                    } else {
-                        billStatus = "Submitted";
-                        statusMessage = "Claim submitted";
+                        // No payment button for submitted claims
+                        showCopayButton = false;
                     }
                 } else if ("Processed".equals(status)) {
                     billStatus = "Processed";
-                    statusMessage = "Claim processed by provider";
+                    statusMessage = "Claim processed. Final amount calculated.";
                     bill.put("copayAmount", outOfPocket);
-                    bill.put("copayPaid", true);
                 } else if ("Denied".equals(status)) {
                     billStatus = "Denied";
                     statusMessage = "Claim denied by insurance";
                 } else if ("Paid".equals(status)) {
                     billStatus = "Paid";
                     statusMessage = "Claim fully paid";
+                    bill.put("copayAmount", outOfPocket);
                 }
                 
                 bill.put("billStatus", billStatus);
                 bill.put("statusMessage", statusMessage);
                 bill.put("primaryCopay", primaryCopay);
+                bill.put("showCopayButton", showCopayButton);
+                bill.put("showProcessingNotification", showProcessingNotification);
                 
                 allBills.add(bill);
             }
@@ -177,12 +180,13 @@ public class PatientService {
             
         } catch (Exception e) {
             // Return empty list if error
+            e.printStackTrace();
         }
         
         return allBills;
     }
     
-    // Get pending bills (outOfPocket = 0/null and status = Submitted)
+ // Get pending bills (bills with status = Submitted) - MODIFIED
     public List<Map<String, Object>> getPendingBills(int patientId) {
         List<Map<String, Object>> pendingBills = new ArrayList<>();
         
@@ -190,21 +194,18 @@ public class PatientService {
             // Get all bills
             List<Map<String, Object>> allBills = getAllBills(patientId);
             
-            // Filter for pending bills
+            // Filter for pending bills (Submitted status)
             for (Map<String, Object> bill : allBills) {
                 String status = (String) bill.get("status");
-                Double outOfPocket = (Double) bill.get("finalOutOfPocket");
-                String billStatus = (String) bill.get("billStatus");
                 
-                if ("Submitted".equals(status) && 
-                    (outOfPocket == null || outOfPocket == 0.0) &&
-                    "Pending Payment".equals(billStatus)) {
+                if ("Submitted".equals(status)) {
                     pendingBills.add(bill);
                 }
             }
             
         } catch (Exception e) {
             // Return empty list if error
+            e.printStackTrace();
         }
         
         return pendingBills;

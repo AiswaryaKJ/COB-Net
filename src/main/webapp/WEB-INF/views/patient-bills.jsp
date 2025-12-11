@@ -15,13 +15,35 @@
         .navbar-custom { background: linear-gradient(135deg, #2c3e50, #3498db); }
         .summary-card { background: white; border-radius: 15px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .bill-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
-        .bill-status { padding: 5px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-waiting { background: #d1ecf1; color: #0c5460; }
-        .status-processed { background: #d4edda; color: #155724; }
-        .tabs { display: flex; border-bottom: 2px solid #dee2e6; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab.active { border-bottom-color: #007bff; font-weight: 600; color: #007bff; }
+        .bill-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .status-submitted { 
+            background: #fff3cd; 
+            color: #856404; 
+        }
+        .status-processed { 
+            background: #d4edda; 
+            color: #155724; 
+        }
+        .status-denied { 
+            background: #f8d7da; 
+            color: #721c24; 
+        }
+        .status-paid { 
+            background: #cce5ff; 
+            color: #004085; 
+        }
+        .processing-alert {
+            background-color: #e7f1ff;
+            border-left: 4px solid #0d6efd;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -47,7 +69,7 @@
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="bills/pending?patientId=${patientId}" class="btn btn-warning me-2">
-                        <i class="fas fa-clock me-2"></i>Pending (${pendingCount})
+                        <i class="fas fa-clock me-2"></i>Submitted (${pendingCount})
                     </a>
                     <a href="bills/history?patientId=${patientId}" class="btn btn-success">
                         <i class="fas fa-history me-2"></i>History (${historyCount})
@@ -71,8 +93,8 @@
             </div>
         <% } %>
         
-        <!-- All Bills -->
         <% 
+            // DECLARE the allBills variable
             Object billsObj = request.getAttribute("allBills");
             List<Map<String, Object>> allBills = null;
             
@@ -86,9 +108,10 @@
             <div class="alert alert-light mb-4">
                 <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Bill Status Legend:</h6>
                 <div class="d-flex flex-wrap gap-3">
-                    <div><span class="bill-status status-pending">Pending Payment</span> - Copay not paid yet</div>
-                    <div><span class="bill-status status-waiting">Waiting for Processing</span> - Copay paid, waiting for provider</div>
+                    <div><span class="bill-status status-submitted">Submitted</span> - Claim submitted, processing in progress</div>
                     <div><span class="bill-status status-processed">Processed</span> - Claim processed by provider</div>
+                    <div><span class="bill-status status-denied">Denied</span> - Claim denied by insurance</div>
+                    <div><span class="bill-status status-paid">Paid</span> - Claim fully paid</div>
                 </div>
             </div>
             
@@ -98,19 +121,32 @@
                 double billedAmount = (double) bill.get("billedAmount");
                 String billStatus = (String) bill.get("billStatus");
                 String statusMessage = (String) bill.get("statusMessage");
-                Double copayAmount = (Double) bill.get("copayAmount");
                 Double outOfPocket = (Double) bill.get("finalOutOfPocket");
                 String statusClass = "";
                 
-                if ("Pending Payment".equals(billStatus)) {
-                    statusClass = "status-pending";
-                } else if ("Waiting for Processing".equals(billStatus)) {
-                    statusClass = "status-waiting";
-                } else if ("Processed".equals(billStatus)) {
+                // Get status from actual claim status
+                String claimStatus = (String) bill.get("status");
+                
+                if ("Submitted".equals(claimStatus)) {
+                    statusClass = "status-submitted";
+                } else if ("Processed".equals(claimStatus)) {
                     statusClass = "status-processed";
+                } else if ("Denied".equals(claimStatus)) {
+                    statusClass = "status-denied";
+                } else if ("Paid".equals(claimStatus)) {
+                    statusClass = "status-paid";
                 }
             %>
                 <div class="bill-card">
+                    <!-- Processing Notification for Submitted Claims -->
+                    <% if ("Submitted".equals(claimStatus)) { %>
+                        <div class="processing-alert">
+                            <i class="fas fa-sync-alt fa-spin me-2"></i>
+                            <strong>Processing:</strong> This claim is currently being processed. 
+                            The final amount will be calculated after insurance review.
+                        </div>
+                    <% } %>
+                    
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h5 class="mb-1">Claim #HC-<%= claimId %></h5>
@@ -121,38 +157,40 @@
                                     • <i class="fas fa-user-md me-1"></i><%= bill.get("providerName") %>
                                 <% } %>
                             </p>
-                            <p class="mb-0">
-                                <strong>Total Bill:</strong> $<%= String.format("%.2f", billedAmount) %>
-                                <% if (copayAmount != null && outOfPocket == null) { %>
-                                    • <strong>Your Copay:</strong> $<%= String.format("%.2f", copayAmount) %>
-                                <% } else if (outOfPocket != null) { %>
-                                    • <strong>You Paid:</strong> $<%= String.format("%.2f", outOfPocket) %>
-                                <% } %>
-                            </p>
+							<p class="mb-0">
+							    <strong>Billed Amount:</strong> $<%= String.format("%.2f", billedAmount) %>
+							    <% if (outOfPocket != null && outOfPocket > 0 && !"Submitted".equals(claimStatus)) { %>
+							        • <strong>Amount Due:</strong> $<%= String.format("%.2f", outOfPocket) %>
+							    <% } else if (outOfPocket != null && outOfPocket == 0 && !"Submitted".equals(claimStatus)) { %>
+							        • <strong>Insurance Covered:</strong> Full amount
+							    <% } %>
+							</p>
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="mb-2">
-                                <span class="bill-status <%= statusClass %>"><%= billStatus %></span>
+                                <span class="bill-status <%= statusClass %>"><%= claimStatus %></span>
                             </div>
                             <div class="btn-group">
                                 <a href="bill/details?patientId=${patientId}&claimId=<%= claimId %>" 
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye me-1"></i>View Details
                                 </a>
-                                <% if ("Pending Payment".equals(billStatus) && copayAmount != null) { %>
+                                <!-- Payment button only for Processed status with amount due -->
+                                <% if ("Processed".equals(claimStatus) && outOfPocket != null && outOfPocket > 0) { %>
                                     <a href="pay?patientId=${patientId}&claimId=<%= claimId %>" 
                                        class="btn btn-sm btn-success">
-                                        <i class="fas fa-credit-card me-1"></i>Pay Copay
+                                        <i class="fas fa-credit-card me-1"></i>Pay Now
                                     </a>
                                 <% } %>
                             </div>
                         </div>
                     </div>
                     <div class="mt-2">
-                        <small class="text-muted"><%= statusMessage %></small>
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i><%= statusMessage %></small>
                     </div>
                 </div>
             <% } %>
+            
         <% } else { %>
             <div class="text-center py-5">
                 <i class="fas fa-file-invoice fa-4x text-muted mb-3"></i>

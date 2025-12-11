@@ -1,5 +1,8 @@
 package com.example.demo.controller;
 
+import com.example.demo.bean.Claim;
+import com.example.demo.bean.Patient;
+import com.example.demo.dao.ClaimRepository;
 import com.example.demo.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,6 +19,8 @@ public class PatientController {
     
     @Autowired
     private PatientService patientService;
+    @Autowired
+    private ClaimRepository claimRepository;
     
     // Patient Dashboard
     @GetMapping("/dashboard")
@@ -161,7 +166,7 @@ public class PatientController {
         }
     }
     
-    // View specific bill details
+ // View specific bill details - UPDATED
     @GetMapping("/bill/details")
     public String viewBillDetails(@RequestParam("patientId") int patientId,
                                   @RequestParam("claimId") int claimId,
@@ -171,27 +176,29 @@ public class PatientController {
             model.addAttribute("patientId", patientId);
             model.addAttribute("claimId", claimId);
             
-            // Get all bills and find the specific one
-            List<Map<String, Object>> allBills = patientService.getAllBills(patientId);
-            Map<String, Object> selectedBill = null;
+            // Get the specific claim
+            Claim claim = claimRepository.findById(claimId).orElse(null);
             
-            for (Map<String, Object> bill : allBills) {
-                if ((int) bill.get("claimId") == claimId) {
-                    selectedBill = bill;
-                    break;
-                }
-            }
-            
-            if (selectedBill != null) {
-                model.addAttribute("bill", selectedBill);
+            if (claim != null && claim.getPatient().getPatientId() == patientId) {
+                model.addAttribute("claim", claim);
                 
-                // Get insurance info for context
+                // Get provider name
+                if (claim.getProvider() != null) {
+                    model.addAttribute("providerName", claim.getProvider().getName());
+                }
+                
+                // Get patient name
+                Patient patient = claim.getPatient();
+                String patientName = patient.getFirstName() + " " + patient.getLastName();
+                model.addAttribute("patientName", patientName);
+                
+                // Get primary copay for information (not for payment)
                 Double primaryCopay = patientService.getPrimaryInsuranceCopay(patientId);
                 model.addAttribute("primaryCopay", primaryCopay);
                 
                 return "patient-bill-details";
             } else {
-                model.addAttribute("error", "Bill not found");
+                model.addAttribute("error", "Bill not found or access denied");
                 return "error";
             }
             

@@ -1,7 +1,7 @@
 package com.example.demo.bean;
 import java.time.LocalDate;
-
 import jakarta.persistence.*;
+
 @Entity
 @Table(name = "PatientCoverage")
 @IdClass(PatientCoverageId.class)
@@ -23,6 +23,13 @@ public class PatientCoverage {
     @Column(name = "termination_date")
     private LocalDate terminationDate;
     
+    // NEW: Deductible Tracking
+    @Column(name = "deductible_paid_this_year")
+    private Double deductiblePaidThisYear = 0.0;
+    
+    @Column(name = "deductible_remaining")
+    private Double deductibleRemaining;
+    
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false, insertable = false, updatable = false)
     private Patient patient;
@@ -31,46 +38,26 @@ public class PatientCoverage {
     @JoinColumn(name = "plan_id", nullable = false, insertable = false, updatable = false)
     private InsurancePlan insurancePlan;
 
+    // Updated Getters and Setters
+    public int getPatientId() { return patientId; }
+    public void setPatientId(int patientId) { this.patientId = patientId; }
 
-	public int getPatientId() {
-		return patientId;
-	}
+    public int getPlanId() { return planId; }
+    public void setPlanId(int planId) { this.planId = planId; }
 
-	public void setPatientId(int patientId) {
-		this.patientId = patientId;
-	}
+    public int getCoverageOrder() { return coverageOrder; }
+    public void setCoverageOrder(int coverageOrder) { this.coverageOrder = coverageOrder; }
 
-	public int getPlanId() {
-		return planId;
-	}
+    public LocalDate getEffectiveDate() { return effectiveDate; }
+    public void setEffectiveDate(LocalDate effectiveDate) { this.effectiveDate = effectiveDate; }
 
-	public void setPlanId(int planId) {
-		this.planId = planId;
-	}
-
-	public int getCoverageOrder() {
-		return coverageOrder;
-	}
-
-	public void setCoverageOrder(int coverageOrder) {
-		this.coverageOrder = coverageOrder;
-	}
-
-	public LocalDate getEffectiveDate() {
-		return effectiveDate;
-	}
-
-	public void setEffectiveDate(LocalDate effectiveDate) {
-		this.effectiveDate = effectiveDate;
-	}
-
-	public LocalDate getTerminationDate() {
-		return terminationDate;
-	}
-
-	public void setTerminationDate(LocalDate terminationDate) {
-		this.terminationDate = terminationDate;
-	}
-
-    // Getters and Setters...
+    public LocalDate getTerminationDate() { return terminationDate; }
+    public void setTerminationDate(LocalDate terminationDate) { this.terminationDate = terminationDate; }
+    
+    // New getters and setters
+    public Double getDeductiblePaidThisYear() { return deductiblePaidThisYear; }
+    public void setDeductiblePaidThisYear(Double deductiblePaidThisYear) { this.deductiblePaidThisYear = deductiblePaidThisYear; }
+    
+    public Double getDeductibleRemaining() { return deductibleRemaining; }
+    public void setDeductibleRemaining(Double deductibleRemaining) { this.deductibleRemaining = deductibleRemaining; }
 }
