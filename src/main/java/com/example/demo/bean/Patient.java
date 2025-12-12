@@ -2,6 +2,7 @@ package com.example.demo.bean;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.persistence.*;
 
@@ -38,7 +39,20 @@ public class Patient {
     @OneToMany(mappedBy = "patient")
     private List<PatientCoverage> coverages;
 
-
+    @Transient
+    public Integer getId() {
+        return this.patientId;
+    }
+    
+    // Helper method for display
+    public String getFullName() {
+        return this.firstName + " " + this.lastName;
+    }
+    
+    // Helper method for display
+    public String getFormattedDob() {
+        return this.dob != null ? this.dob.toString() : "N/A";
+    }
     // Getters and Setters
     public int getPatientId() { return patientId; }
     public void setPatientId(int patientId) { this.patientId = patientId; }
@@ -60,4 +74,5 @@ public class Patient {
 
     public String getContactNumber() { return contactNumber; }
     public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
+
 }

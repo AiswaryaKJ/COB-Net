@@ -39,6 +39,34 @@ public class Claim {
     @JoinColumn(name = "provider_id", nullable = false)
     private Provider provider;
 
+    @Transient
+    public Integer getPatientIdValue() {
+        return this.patient != null ? this.patient.getPatientId() : null;
+    }
+    
+    // Helper method to get provider ID directly (for queries)
+    @Transient  
+    public Integer getProviderIdValue() {
+        return this.provider != null ? this.provider.getProviderId() : null;
+    }
+    
+    // Helper method for display in admin interface
+    public String getFormattedClaimDate() {
+        return this.claimDate != null ? this.claimDate.toString() : "N/A";
+    }
+    
+    // Helper method for display in admin interface
+    public String getStatusBadgeClass() {
+        if (this.status == null) return "";
+        switch (this.status.toLowerCase()) {
+            case "submitted": return "badge-submitted";
+            case "processed": return "badge-processed";
+            case "approved": return "badge-approved";
+            case "denied": return "badge-denied";
+            default: return "badge-pending";
+        }
+    }
+    
     // Constructors
     public Claim() {
         this.claimDate = LocalDate.now();

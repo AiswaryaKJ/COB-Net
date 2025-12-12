@@ -11,7 +11,10 @@ import com.example.demo.dao.ClaimRepository;
 import com.example.demo.dao.PatientRepository;
 import com.example.demo.dao.ProviderRepository;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -105,4 +108,76 @@ public class ProviderService {
         return providerRepository.findById(providerId)
             .orElseThrow(() -> new RuntimeException("Invalid Provider ID"));
     }
+    public Map<String, Object> getPatientWithClaims(int patientId) {
+        Optional<Patient> patientOpt = patientRepository.findById(patientId);
+        
+        if (patientOpt.isEmpty()) {
+            return null;
+        }
+        
+        Patient patient = patientOpt.get();
+        Map<String, Object> result = new HashMap<>();
+        
+        // Patient basic info
+        result.put("patientId", patient.getPatientId());
+        result.put("fullName", patient.getFirstName() + " " + patient.getLastName());
+        result.put("firstName", patient.getFirstName());
+        result.put("lastName", patient.getLastName());
+        result.put("dob", patient.getDob());
+        result.put("formattedDob", patient.getDob() != null ? patient.getDob().toString() : "N/A");
+        result.put("gender", patient.getGender());
+        result.put("memberId", patient.getMemberId());
+        result.put("contactNumber", patient.getContactNumber());
+        
+        // Get claims for this patient
+        List<Claim> patientClaims = claimRepository.findByPatientPatientId(patientId);
+        
+        // Add claims data
+        result.put("totalClaims", patientClaims.size());
+        
+        if (!patientClaims.isEmpty()) {
+            // Calculate total billed amount
+            double totalBilled = patientClaims.stream()
+                .mapToDouble(Claim::getBilledAmount)
+                .sum();
+            result.put("totalBilledAmount", totalBilled);
+            
+            // Count claims by status
+            Map<String, Long> statusCounts = patientClaims.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                    claim -> claim.getStatus() != null ? claim.getStatus() : "Unknown",
+                    java.util.stream.Collectors.counting()
+                ));
+            result.put("statusCounts", statusCounts);
+            
+            // Add recent claims (last 3)
+            List<Map<String, Object>> recentClaims = patientClaims.stream()
+                .sorted((c1, c2) -> c2.getClaimDate().compareTo(c1.getClaimDate()))
+                .limit(3)
+                .map(claim -> {
+                    Map<String, Object> claimInfo = new HashMap<>();
+                    claimInfo.put("claimId", claim.getClaimId());
+                    claimInfo.put("claimDate", claim.getClaimDate());
+                    claimInfo.put("status", claim.getStatus());
+                    claimInfo.put("billedAmount", claim.getBilledAmount());
+                    claimInfo.put("diagnosisCode", claim.getDiagnosisCode());
+                    return claimInfo;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            result.put("recentClaims", recentClaims);
+        } else {
+            result.put("totalBilledAmount", 0);
+            result.put("statusCounts", new HashMap<>());
+            result.put("recentClaims", new ArrayList<>());
+        }
+        
+        return result;
+    }
+
+	public Integer getProviderIdByUsername(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
 }

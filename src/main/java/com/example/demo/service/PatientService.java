@@ -29,6 +29,7 @@ public class PatientService {
         return patientRepository.findById(patientId).orElse(null);
     }
     
+    
  // In PatientService.java - Update the existing method
     public List<Map<String, Object>> getPatientInsuranceDetails(int patientId) {
         List<Map<String, Object>> policies = new ArrayList<>();
@@ -256,8 +257,8 @@ public class PatientService {
             
         } catch (Exception e) {
             // Return empty list if error
-        }
-        
+        }   
         return historyBills;
     }
+
 }

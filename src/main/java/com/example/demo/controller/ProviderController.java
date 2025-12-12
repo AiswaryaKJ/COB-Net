@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.example.demo.bean.Claim;
@@ -110,12 +113,13 @@ public class ProviderController {
         }
     }
     
-    // Search by patient
+    // Search by patient - GET (shows the form page)
     @GetMapping("/searchpatient")
     public String searchPatientForm() {
         return "search-patient";
     }
     
+    // Search by patient - POST (redirects to view-claims page)
     @PostMapping("/searchpatient")
     public String searchPatient(@RequestParam("patientId") int patientId, Model model) {
         try {
@@ -129,22 +133,21 @@ public class ProviderController {
         }
     }
     
-    // Search by provider
-    @GetMapping("/searchprovider")
-    public String searchProviderForm() {
-        return "search-provider";
-    }
-    
-    @PostMapping("/searchprovider")
-    public String searchProvider(@RequestParam("providerId") int providerId, Model model) {
+    // API Endpoint for AJAX Search
+    @GetMapping("/api/patientDetails")
+    @ResponseBody
+    public ResponseEntity<?> getPatientDetailsApi(@RequestParam("patientId") int patientId) {
         try {
-            List<Claim> claims = providerService.getClaimsByProviderId(providerId);
-            model.addAttribute("claims", claims);
-            model.addAttribute("searchType", "Provider ID: " + providerId);
-            return "view-claims";
+            // Get patient with claims using ProviderService
+            Map<String, Object> patientData = providerService.getPatientWithClaims(patientId);
+            
+            if (patientData == null) {
+                return ResponseEntity.status(404).body("Patient not found with ID: " + patientId);
+            }
+            
+            return ResponseEntity.ok(patientData);
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-            return "search-provider";
+            return ResponseEntity.status(500).body("Error fetching patient details: " + e.getMessage());
         }
     }
 }
