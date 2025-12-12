@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // <-- important
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdminService {
@@ -41,11 +42,25 @@ public class AdminService {
     }
 
     @Transactional
-    public void deleteProvider(int id) {
-        // If you want to manually delete credentials first:
+    public void deactivateProvider(int id) {
+        
+        // 1. Permanently delete credentials associated with the provider
+        // This ensures the user cannot log in once deactivated.
         credentialRepository.deleteByProvider_ProviderId(id);
+        
+        // 2. Set the provider's status to inactive (0) in the Provider table
+        Optional<Provider> providerOptional = providerRepository.findById(id);
 
-        // Then delete provider
-        providerRepository.deleteById(id);
+        if (providerOptional.isPresent()) {
+            Provider provider = providerOptional.get();
+            
+            // *** CORRECTED LINE: Using your specific setter and passing the integer value 0 ***
+            provider.setIsActive(0); 
+            
+            providerRepository.save(provider);
+        } else {
+            // It's good practice to throw an exception if the provider ID is invalid.
+            throw new RuntimeException("Provider with ID " + id + " not found for deactivation.");
+        }
     }
-}
+    }

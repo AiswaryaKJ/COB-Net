@@ -146,6 +146,15 @@
             color: white;
         }
         
+        .btn-secondary { /* Ensure secondary button style is defined */
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
         .btn-sm {
             padding: 6px 12px;
             font-size: 14px;
@@ -286,7 +295,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1><i class="fas fa-handshake"></i> COBNet Admin Dashboard</h1>
             <p>Real-time Claims & Provider Management</p>
@@ -295,7 +303,6 @@
             </button>
         </div>
         
-        <!-- Messages -->
         <c:if test="${not empty error}">
             <div class="message error-message">
                 <strong>Error:</strong> ${error}
@@ -308,7 +315,6 @@
             </div>
         </c:if>
         
-        <!-- Claims Statistics -->
         <div class="stats-grid">
             <div class="stat-card submitted">
                 <div class="stat-label">Submitted</div>
@@ -347,17 +353,13 @@
             </div>
         </div>
         
-        <!-- Claims Section -->
         <div class="section">
             <div class="section-header">
                 <div class="section-title">
                     <i class="fas fa-file-medical"></i>
                     Claims Overview
                 </div>
-                <div>
-                    Total: <strong><c:out value="${totalClaims != null ? totalClaims : 0}" /></strong> | 
-                    Billed: <strong>$<c:out value="${totalBilledAmount != null ? totalBilledAmount : '0.00'}" /></strong>
-                </div>
+               
             </div>
             
             <c:choose>
@@ -443,7 +445,6 @@
             </c:choose>
         </div>
         
-        <!-- Providers Section with CRUD -->
         <div class="section">
             <div class="section-header">
                 <div class="section-title">
@@ -465,6 +466,7 @@
                                 <th>Specialty</th>
                                 <th>NPI</th>
                                 <th>Network Status</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -493,6 +495,20 @@
                                         </c:choose>
                                     </td>
                                     <td>
+                                        <c:choose>
+                                            <c:when test="${provider.isActive == 1}">
+                                                <span style="color: #10b981; font-weight: 600;">
+                                                    <i class="fas fa-check-circle"></i> Active
+                                                </span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span style="color: #757575; font-weight: 600;">
+                                                    <i class="fas fa-minus-circle"></i> Inactive
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
                                         <div class="action-buttons">
                                             <button class="btn btn-warning btn-sm" 
                                                     onclick="openEditProviderModal(
@@ -504,11 +520,13 @@
                                                     )">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
-                                            <a href="/admin/delete/${provider.providerId}" 
-                                               class="btn btn-danger btn-sm"
-                                               onclick="return confirm('Are you sure you want to delete ${provider.name}?')">
-                                                <i class="fas fa-trash-alt"></i> Delete
-                                            </a>
+                                            <c:if test="${provider.isActive == 1}">
+                                                <a href="/admin/delete/${provider.providerId}" 
+                                                   class="btn btn-secondary btn-sm"
+                                                   onclick="return confirm('Are you sure you want to set ${provider.name} status to Inactive?')">
+                                                    <i class="fas fa-user-slash"></i> Inactive
+                                                </a>
+                                            </c:if>
                                         </div>
                                     </td>
                                 </tr>
@@ -527,7 +545,6 @@
         </div>
     </div>
     
-    <!-- Add Provider Modal -->
     <div id="addProviderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -566,7 +583,6 @@
         </div>
     </div>
     
-    <!-- Edit Provider Modal -->
     <div id="editProviderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

@@ -23,7 +23,17 @@ public class Provider {
     @Column(name = "npi", unique = true, length = 20)
     private String npi;
     
-    @OneToOne(mappedBy = "provider", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Column(name = "is_active", nullable = false)
+    private Integer isActive = 1;   // 1 = active, 0 = inactive
+
+	public Integer getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Integer isActive) {
+		this.isActive = isActive;
+	}
+	@OneToOne(mappedBy = "provider", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Credentials credentials;
 
     @Transient
