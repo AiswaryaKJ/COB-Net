@@ -35,7 +35,7 @@ public class InsurerService {
         return claimRepository.findByStatus("Processed");
     }
     
-    // Process a claim - WITH CORRECT OOPM LOGIC
+    // Process a claim - FINAL CORRECTED VERSION
     @Transactional
     public Settlement processClaim(int claimId) {
         Claim claim = claimRepository.findById(claimId).orElse(null);
@@ -58,55 +58,61 @@ public class InsurerService {
         settlement.setProviderId(claim.getProvider().getProviderId());
         settlement.setBilledAmount(billedAmount);
         
-        double totalPatientResponsibility = 0;
-        double totalOopSavings = 0;
-        double remainingForNextInsurance = billedAmount;
+        // Find primary and secondary insurance
+        PatientCoverage primaryCoverage = null;
+        PatientCoverage secondaryCoverage = null;
+        InsurancePlan primaryPlan = null;
+        InsurancePlan secondaryPlan = null;
         
-        // Process each insurance in order (Primary → Secondary)
         for (PatientCoverage coverage : coverages) {
             InsurancePlan plan = insurancePlanRepository.findById(coverage.getPlanId()).orElse(null);
             if (plan == null) continue;
             
             if (coverage.getCoverageOrder() == 1) {
-                // PRIMARY INSURANCE
+                primaryCoverage = coverage;
+                primaryPlan = plan;
                 settlement.setPrimaryPlanId(plan.getPlanId());
-                double[] primaryResult = processInsuranceWithCorrectOopM(
-                    plan, coverage, remainingForNextInsurance, true);
-                
-                double primaryPatientPays = primaryResult[0];
-                double primaryOopSavings = primaryResult[1];
-                double primaryOopApplied = primaryResult[2];
-                double primaryDeductibleApplied = primaryResult[3];
-                double primaryCopay = primaryResult[4];
-                double primaryCoinsurance = primaryResult[5];
-                
-                settlement.setPrimaryCopay(primaryCopay);
-                settlement.setPrimaryDeductibleApplied(primaryDeductibleApplied);
-                settlement.setCoinsuranceAmount(primaryCoinsurance);
-                settlement.setPrimaryOopApplied(primaryOopApplied);
-                
-                totalPatientResponsibility = primaryPatientPays;
-                totalOopSavings += primaryOopSavings;
-                
-                // What's left for secondary insurance = what patient would pay after primary
-                remainingForNextInsurance = primaryPatientPays;
-                
-                // Calculate primary insurance payment
-                double primaryInsurancePays = billedAmount - totalPatientResponsibility;
-                settlement.setPrimaryInsurancePaid(primaryInsurancePays);
-                
             } else if (coverage.getCoverageOrder() == 2) {
-                // SECONDARY INSURANCE (processes what primary didn't cover)
+                secondaryCoverage = coverage;
+                secondaryPlan = plan;
                 settlement.setSecondaryPlanId(plan.getPlanId());
-                double[] secondaryResult = processInsuranceWithCorrectOopM(
-                    plan, coverage, totalPatientResponsibility, false);
+            }
+        }
+        
+        double totalPatientResponsibility = 0;
+        double totalOopSavings = 0;
+        
+        // STEP 1: Process PRIMARY INSURANCE (full bill)
+        if (primaryPlan != null && primaryCoverage != null) {
+            double[] primaryResult = processInsurance(primaryPlan, primaryCoverage, billedAmount, true);
+            
+            double primaryPatientPays = primaryResult[0];        // What patient pays to primary
+            double primaryOopSavings = primaryResult[1];         // OOP savings from primary
+            double primaryOopApplied = primaryResult[2];         // OOP amount applied
+            double primaryDeductibleApplied = primaryResult[3];  // Deductible applied
+            double primaryCopay = primaryResult[4];              // Copay amount
+            double primaryCoinsurance = primaryResult[5];        // Coinsurance amount
+            double primaryInsurancePays = primaryResult[6];      // Insurance payment
+            
+            settlement.setPrimaryCopay(primaryCopay);
+            settlement.setPrimaryDeductibleApplied(primaryDeductibleApplied);
+            settlement.setCoinsuranceAmount(primaryCoinsurance);
+            settlement.setPrimaryOopApplied(primaryOopApplied);
+            settlement.setPrimaryInsurancePaid(primaryInsurancePays);
+            
+            totalPatientResponsibility = primaryPatientPays;
+            totalOopSavings += primaryOopSavings;
+            
+            // STEP 2: Process SECONDARY INSURANCE (only if patient has responsibility after primary)
+            if (secondaryPlan != null && secondaryCoverage != null && primaryPatientPays > 0) {
+                double[] secondaryResult = processInsurance(secondaryPlan, secondaryCoverage, primaryPatientPays, false);
                 
-                double secondaryPatientPays = secondaryResult[0];
-                double secondaryOopSavings = secondaryResult[1];
-                double secondaryOopApplied = secondaryResult[2];
-                double secondaryDeductibleApplied = secondaryResult[3];
-                double secondaryCopay = secondaryResult[4];
-                double secondaryCoinsurance = secondaryResult[5];
+                double secondaryPatientPays = secondaryResult[0];       // What patient pays after secondary
+                double secondaryOopSavings = secondaryResult[1];        // OOP savings from secondary
+                double secondaryOopApplied = secondaryResult[2];        // OOP amount applied
+                double secondaryDeductibleApplied = secondaryResult[3]; // Deductible applied
+                double secondaryCopay = secondaryResult[4];             // Copay amount
+                double secondaryCoinsurance = secondaryResult[5];       // Coinsurance amount
                 
                 settlement.setSecondaryCopay(secondaryCopay);
                 settlement.setSecondaryDeductibleApplied(secondaryDeductibleApplied);
@@ -116,8 +122,8 @@ public class InsurerService {
                 totalPatientResponsibility = secondaryPatientPays;
                 totalOopSavings += secondaryOopSavings;
                 
-                // Calculate secondary insurance payment
-                double secondaryInsurancePays = billedAmount - totalPatientResponsibility - settlement.getPrimaryInsurancePaid();
+                // Secondary insurance pays what it covers (patient's reduced responsibility)
+                double secondaryInsurancePays = primaryPatientPays - secondaryPatientPays;
                 settlement.setSecondaryInsurancePaid(Math.max(0, secondaryInsurancePays));
             }
         }
@@ -137,58 +143,76 @@ public class InsurerService {
         return settlement;
     }
     
-    // CORRECT OOPM LOGIC - cumulative tracking
-    private double[] processInsuranceWithCorrectOopM(InsurancePlan plan, PatientCoverage coverage, 
-                                                     double amountToProcess, boolean isPrimary) {
+    // Main insurance processing logic - CORRECTED
+    private double[] processInsurance(InsurancePlan plan, PatientCoverage coverage, 
+                                     double amountToProcess, boolean isPrimary) {
         
-        // Get current tracking values
+        // Get plan details
         double deductible = plan.getDeductible();
         double copay = plan.getCopay();
         double coinsuranceRate = plan.getCoinsurance() / 100.0;
         double oopMax = plan.getOutOfPocketMax();
         
-        // Current patient payments for this plan (cumulative for the year)
+        // Get current patient tracking
         double deductiblePaid = coverage.getDeductiblePaidThisYear() != null ? 
                                coverage.getDeductiblePaidThisYear() : 0.0;
         double oopPaid = coverage.getOopPaidThisYear() != null ? 
                         coverage.getOopPaidThisYear() : 0.0;
         
-        // 1. CALCULATE BASE AMOUNTS for this claim
+        // If secondary and nothing to process, return zeros
+        if (!isPrimary && amountToProcess <= 0) {
+            return new double[]{0, 0, 0, 0, 0, 0, 0};
+        }
+        
+        // 1. APPLY DEDUCTIBLE
         double deductibleApplied = 0;
         double remainingAfterDeductible = amountToProcess;
         
-        // Apply deductible if not met for the year
         if (deductiblePaid < deductible) {
             double deductibleRemaining = deductible - deductiblePaid;
             deductibleApplied = Math.min(amountToProcess, deductibleRemaining);
-            remainingAfterDeductible = amountToProcess - deductibleApplied;
+            remainingAfterDeductible = Math.max(0, amountToProcess - deductibleApplied);
         }
         
-        // Apply copay (always applies per service)
-        double remainingAfterCopay = Math.max(0, remainingAfterDeductible - copay);
+        // 2. APPLY COPAY (only if amount remains after deductible)
+        double copayApplied = 0;
+        double remainingAfterCopay = remainingAfterDeductible;
         
-        // Apply coinsurance (patient pays percentage of remaining)
-        double patientCoinsurance = remainingAfterCopay * coinsuranceRate;
+        if (remainingAfterDeductible > 0) {
+            copayApplied = Math.min(remainingAfterDeductible, copay);
+            remainingAfterCopay = Math.max(0, remainingAfterDeductible - copayApplied);
+        }
+        
+        // 3. APPLY COINSURANCE (only if amount remains after copay)
+        double coinsuranceApplied = 0;
+        
+        if (remainingAfterCopay > 0) {
+            coinsuranceApplied = remainingAfterCopay * coinsuranceRate;
+        }
         
         // Base patient responsibility for THIS CLAIM
-        double basePatientResponsibility = deductibleApplied + copay + patientCoinsurance;
+        double basePatientResponsibility = deductibleApplied + copayApplied + coinsuranceApplied;
         
-        // 2. APPLY OOP MAX LOGIC (cumulative)
+        // 4. APPLY OOP MAX LOGIC
         double actualPatientPays;
         double oopSavings = 0;
         double oopApplied = 0;
         
         if (oopPaid >= oopMax) {
-            // Already reached OOP Max for the year - patient pays NOTHING for this claim
+            // Already reached OOP Max - patient pays NOTHING
             actualPatientPays = 0;
             oopSavings = basePatientResponsibility; // Full savings
             oopApplied = 0;
             
+            // Update OOP tracking (already at max)
+            coverage.setOopPaidThisYear(oopMax);
+            coverage.setOopRemaining(0.0);
+            
         } else if (oopPaid + basePatientResponsibility > oopMax) {
-            // This claim would push patient over OOP Max
+            // Would exceed OOP Max
             double roomUntilMax = oopMax - oopPaid;
-            actualPatientPays = roomUntilMax; // Patient pays only up to OOP Max
-            oopSavings = basePatientResponsibility - actualPatientPays;
+            actualPatientPays = roomUntilMax; // Patient pays only up to max
+            oopSavings = basePatientResponsibility - actualPatientPays; // Insurance covers the rest
             oopApplied = actualPatientPays;
             
             // Update OOP tracking (reached max)
@@ -206,108 +230,101 @@ public class InsurerService {
             coverage.setOopRemaining(oopMax - (oopPaid + actualPatientPays));
         }
         
-        // 3. UPDATE DEDUCTIBLE TRACKING
+        // 5. UPDATE DEDUCTIBLE TRACKING
         coverage.setDeductiblePaidThisYear(deductiblePaid + deductibleApplied);
         coverage.setDeductibleRemaining(Math.max(0, deductible - (deductiblePaid + deductibleApplied)));
         patientCoverageRepository.save(coverage);
         
-        // Return: [actualPatientPays, oopSavings, oopApplied, deductibleApplied, copay, patientCoinsurance]
+        // 6. Calculate insurance payment
+        double insurancePays = amountToProcess - actualPatientPays;
+        
+        // Return: [actualPatientPays, oopSavings, oopApplied, deductibleApplied, copayApplied, coinsuranceApplied, insurancePays]
         return new double[]{
-            actualPatientPays,    // 0 - What patient actually pays for this claim
-            oopSavings,           // 1 - OOP savings due to reaching max
-            oopApplied,           // 2 - OOP amount applied
-            deductibleApplied,    // 3 - Deductible applied for this claim
-            copay,                // 4 - Copay amount
-            patientCoinsurance    // 5 - Coinsurance amount
+            actualPatientPays,      // 0 - What patient actually pays
+            oopSavings,             // 1 - OOP savings
+            oopApplied,             // 2 - OOP amount applied
+            deductibleApplied,      // 3 - Deductible applied
+            copayApplied,           // 4 - Copay amount (ACTUALLY APPLIED, not full copay)
+            coinsuranceApplied,     // 5 - Coinsurance amount
+            insurancePays           // 6 - Insurance payment
         };
     }
     
-    // Calculate how insurance processes work (example from your explanation)
-    public Map<String, Object> calculateInsuranceExample(double billedAmount) {
+    // Test calculation for debugging
+    public Map<String, Object> testCalculation(double billedAmount, 
+                                              double primaryDeductible, double primaryCopay, double primaryCoinsurancePct,
+                                              double secondaryDeductible, double secondaryCopay, double secondaryCoinsurancePct) {
+        
         Map<String, Object> result = new HashMap<>();
         
-        // Example insurance plans (hardcoded for demonstration)
-        Map<String, Object> primaryPlan = new HashMap<>();
-        primaryPlan.put("copay", 75.00);
-        primaryPlan.put("deductible", 2000.00);
-        primaryPlan.put("coinsurance", 30.0); // Patient pays 30%
-        primaryPlan.put("oopMax", 6000.00);
-        
-        Map<String, Object> secondaryPlan = new HashMap<>();
-        secondaryPlan.put("copay", 20.00);
-        secondaryPlan.put("deductible", 500.00);
-        secondaryPlan.put("coinsurance", 5.0); // Patient pays 5%
-        secondaryPlan.put("oopMax", 3000.00);
-        
-        // Track running totals
-        double runningPrimaryOop = 0;
-        double runningSecondaryOop = 0;
-        
-        // Primary Insurance Calculation
+        // Simulate primary processing
         double remaining = billedAmount;
         
-        // 1. Primary Deductible
-        double primaryDeductibleApplied = Math.min(remaining, 2000.00);
-        remaining -= primaryDeductibleApplied;
-        runningPrimaryOop += primaryDeductibleApplied;
+        // Primary deductible
+        double primDeductApplied = Math.min(remaining, primaryDeductible);
+        remaining -= primDeductApplied;
         
-        // 2. Primary Copay
-        double primaryCopay = 75.00;
-        remaining -= primaryCopay;
-        runningPrimaryOop += primaryCopay;
+        // Primary copay
+        double primCopayApplied = Math.min(remaining, primaryCopay);
+        remaining -= primCopayApplied;
         
-        // 3. Primary Coinsurance (30% patient responsibility)
-        double primaryPatientCoinsurance = remaining * 0.30;
-        double primaryInsurancePaysCoinsurance = remaining * 0.70;
-        runningPrimaryOop += primaryPatientCoinsurance;
+        // Primary coinsurance (patient pays percentage)
+        double primCoinsurance = remaining * (primaryCoinsurancePct / 100.0);
+        double primInsurancePays = remaining - primCoinsurance;
         
-        // What goes to secondary insurance
-        double toSecondary = primaryPatientCoinsurance;
+        double primaryPatientPays = primDeductApplied + primCopayApplied + primCoinsurance;
+        double primaryInsurancePays = billedAmount - primaryPatientPays;
         
-        // Secondary Insurance Calculation
-        double secondaryRemaining = toSecondary;
+        // What goes to secondary
+        double toSecondary = primaryPatientPays;
         
-        // 1. Secondary Deductible
-        double secondaryDeductibleApplied = Math.min(secondaryRemaining, 500.00);
-        secondaryRemaining -= secondaryDeductibleApplied;
-        runningSecondaryOop += secondaryDeductibleApplied;
+        // Secondary processing
+        double secRemaining = toSecondary;
+        double secDeductApplied = 0;
+        double secCopayApplied = 0;
+        double secCoinsurance = 0;
         
-        // 2. Secondary Copay
-        double secondaryCopay = 20.00;
-        secondaryRemaining -= secondaryCopay;
-        runningSecondaryOop += secondaryCopay;
+        if (secRemaining > 0) {
+            // Secondary deductible
+            secDeductApplied = Math.min(secRemaining, secondaryDeductible);
+            secRemaining -= secDeductApplied;
+            
+            // Secondary copay (only if amount left)
+            if (secRemaining > 0) {
+                secCopayApplied = Math.min(secRemaining, secondaryCopay);
+                secRemaining -= secCopayApplied;
+            }
+            
+            // Secondary coinsurance (only if amount left)
+            if (secRemaining > 0) {
+                secCoinsurance = secRemaining * (secondaryCoinsurancePct / 100.0);
+                secRemaining -= secCoinsurance;
+            }
+        }
         
-        // 3. Secondary Coinsurance (5% patient responsibility)
-        double secondaryPatientCoinsurance = secondaryRemaining * 0.05;
-        double secondaryInsurancePaysCoinsurance = secondaryRemaining * 0.95;
-        runningSecondaryOop += secondaryPatientCoinsurance;
+        double secondaryPatientPays = secDeductApplied + secCopayApplied + secCoinsurance;
+        double secondaryInsurancePays = toSecondary - secondaryPatientPays;
         
-        // Total patient responsibility BEFORE OOPM
-        double totalPatientBeforeOopm = runningPrimaryOop + runningSecondaryOop;
-        
-        // Apply OOP Max limits
-        double primaryOopApplied = Math.min(runningPrimaryOop, 6000.00);
-        double secondaryOopApplied = Math.min(runningSecondaryOop, 3000.00);
-        double totalPatientAfterOopm = primaryOopApplied + secondaryOopApplied;
-        
-        double oopSavings = totalPatientBeforeOopm - totalPatientAfterOopm;
+        double totalPatientPays = secondaryPatientPays;
         
         result.put("billedAmount", billedAmount);
-        result.put("primaryDeductibleApplied", primaryDeductibleApplied);
-        result.put("primaryCopay", primaryCopay);
-        result.put("primaryPatientCoinsurance", primaryPatientCoinsurance);
-        result.put("primaryInsurancePays", billedAmount - runningPrimaryOop);
-        result.put("secondaryDeductibleApplied", secondaryDeductibleApplied);
-        result.put("secondaryCopay", secondaryCopay);
-        result.put("secondaryPatientCoinsurance", secondaryPatientCoinsurance);
-        result.put("secondaryInsurancePays", toSecondary - runningSecondaryOop);
-        result.put("totalPatientBeforeOopm", totalPatientBeforeOopm);
-        result.put("totalPatientAfterOopm", totalPatientAfterOopm);
-        result.put("oopSavings", oopSavings);
-        result.put("primaryOopUsed", runningPrimaryOop);
-        result.put("secondaryOopUsed", runningSecondaryOop);
-        result.put("primaryOopRemaining", 6000.00 - runningPrimaryOop);
-        result.put("secondaryOopRemaining", 3000.00 - runningSecondaryOop);
+        result.put("primaryPatientPays", primaryPatientPays);
+        result.put("primaryInsurancePays", primaryInsurancePays);
+        result.put("primaryBreakdown", Map.of(
+            "deductible", primDeductApplied,
+            "copay", primCopayApplied,
+            "coinsurance", primCoinsurance
+        ));
+        result.put("toSecondary", toSecondary);
+        result.put("secondaryPatientPays", secondaryPatientPays);
+        result.put("secondaryInsurancePays", secondaryInsurancePays);
+        result.put("secondaryBreakdown", Map.of(
+            "deductible", secDeductApplied,
+            "copay", secCopayApplied,
+            "coinsurance", secCoinsurance
+        ));
+        result.put("totalPatientPays", totalPatientPays);
+        result.put("totalInsurancePays", primaryInsurancePays + secondaryInsurancePays);
         
         return result;
     }
