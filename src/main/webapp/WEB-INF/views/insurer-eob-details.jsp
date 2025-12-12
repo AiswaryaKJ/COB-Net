@@ -248,9 +248,9 @@
                         <i class="fas fa-home me-2"></i>Back to Dashboard
                     </a>
                     <c:if test="${claim.status == 'processed' and claim.finalOutOfPocket > 0}">
-                        <a href="/patient/pay?patientId=${claim.patient.patientId}&claimId=${claim.claimId}" class="btn btn-success">
+                        <!--<a href="/patient/pay?patientId=${claim.patient.patientId}&claimId=${claim.claimId}" class="btn btn-success">
                             <i class="fas fa-credit-card me-2"></i>Make Payment
-                        </a>
+                        </a>-->
                     </c:if>
                 </div>
             </div>

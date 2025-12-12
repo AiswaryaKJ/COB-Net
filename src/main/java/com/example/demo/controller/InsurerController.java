@@ -8,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -199,18 +201,31 @@ public class InsurerController {
         }
     }
     
-    // View History (processed/paid claims)
+ // View History (processed/paid claims)
     @GetMapping("/history")
     public String viewHistory(@RequestParam("insurerId") int insurerId, Model model) {
         try {
             Map<String, Object> insurerInfo = getInsurerInfo(insurerId);
             
             // Get claims where this insurer was primary and status is processed/paid
-            List<Claim> primaryHistory = insurerService.getClaimsByPrimaryInsurerAndStatus(insurerId, "processed");
-            // Add paid claims if needed
+            List<Claim> primaryHistory = new ArrayList<>();
+            
+            // Add processed claims
+            List<Claim> primaryProcessed = insurerService.getClaimsByPrimaryInsurerAndStatus(insurerId, "processed");
+            if (primaryProcessed != null) primaryHistory.addAll(primaryProcessed);
+            
+            // Add paid claims
+            List<Claim> primaryPaid = insurerService.getClaimsByPrimaryInsurerAndStatus(insurerId, "paid");
+            if (primaryPaid != null) primaryHistory.addAll(primaryPaid);
             
             // Get claims where this insurer was secondary and status is processed/paid
-            List<Claim> secondaryHistory = insurerService.getClaimsBySecondaryInsurerAndStatus(insurerId, "processed");
+            List<Claim> secondaryHistory = new ArrayList<>();
+            
+            List<Claim> secondaryProcessed = insurerService.getClaimsBySecondaryInsurerAndStatus(insurerId, "processed");
+            if (secondaryProcessed != null) secondaryHistory.addAll(secondaryProcessed);
+            
+            List<Claim> secondaryPaid = insurerService.getClaimsBySecondaryInsurerAndStatus(insurerId, "paid");
+            if (secondaryPaid != null) secondaryHistory.addAll(secondaryPaid);
             
             model.addAttribute("primaryHistory", primaryHistory);
             model.addAttribute("secondaryHistory", secondaryHistory);
@@ -223,5 +238,5 @@ public class InsurerController {
             model.addAttribute("error", "Error loading history: " + e.getMessage());
             return "error";
         }
-    }
+}
 }

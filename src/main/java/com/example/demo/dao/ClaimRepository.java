@@ -82,4 +82,6 @@ public interface ClaimRepository extends JpaRepository<Claim, Integer> {
     // Helper method to get insurer from credentials
     @Query("SELECT c.insurer.insurerId FROM Credentials c WHERE c.userId = :userId")
     Optional<Integer> findInsurerIdByUserId(@Param("userId") int userId);
+    
+    
 }
