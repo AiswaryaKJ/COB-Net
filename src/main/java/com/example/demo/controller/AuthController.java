@@ -60,8 +60,15 @@ public class AuthController {
                     } else {
                         model.addAttribute("error", "No patient linked to this account");
                         return "login";
-                    }                case "PAYER":
-                    return "payer";    // /WEB-INF/views/payer.jsp
+                    } 
+                case "INSURER":
+                    if (stored.getInsurer() != null) {
+                        int insurerId = stored.getInsurer().getInsurerId();
+                        return "redirect:/insurer/dashboard?insurerId=" + insurerId;
+                    } else {
+                        model.addAttribute("error", "No insurer linked to this account");
+                        return "login";
+                    }
                 default:
                     model.addAttribute("error", "Unknown role");
                     return "login";
@@ -128,7 +135,8 @@ public class AuthController {
             Provider provider = providerRepository.findById(providerId).orElseThrow();
             credentials.setProvider(provider);
 
-        } else {
+        } 
+        else {
             model.addAttribute("error", "Only Patient or Provider accounts can be registered here.");
             return "register";
         }

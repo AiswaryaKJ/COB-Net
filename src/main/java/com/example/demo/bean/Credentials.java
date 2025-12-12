@@ -30,6 +30,16 @@ public class Credentials {
     @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
     private Provider provider;
     
+    // NEW: Add insurer relationship
+    @OneToOne
+    @JoinColumn(name = "insurer_id", referencedColumnName = "insurer_id")
+    private Insurer insurer;
+
+    // ... existing getters/setters ...
+
+    // NEW: Insurer getter and setter
+    public Insurer getInsurer() { return insurer; }
+    public void setInsurer(Insurer insurer) { this.insurer = insurer; }
 
     public Patient getPatient() {
 		return patient;

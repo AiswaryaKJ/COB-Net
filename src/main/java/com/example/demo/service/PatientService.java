@@ -24,6 +24,9 @@ public class PatientService {
     @Autowired
     private ClaimRepository claimRepository;
     
+    @Autowired
+    private EOBFinalRepository eobFinalRepository;
+    
     // Get patient by ID
     public Patient getPatientById(int patientId) {
         return patientRepository.findById(patientId).orElse(null);
@@ -259,6 +262,98 @@ public class PatientService {
             // Return empty list if error
         }   
         return historyBills;
+    }
+    
+
+    // Get bill details with EOB information
+    public Map<String, Object> getBillDetails(int patientId, int claimId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        Claim claim = claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found"));
+        
+        // Verify claim belongs to patient
+        if (claim.getPatient().getPatientId() != patientId) {
+            throw new RuntimeException("Access denied");
+        }
+        
+        result.put("claim", claim);
+        result.put("patientId", patientId);
+        
+        // Get EOB information
+        EOBFinal eobFinal = eobFinalRepository.findByClaimClaimId(claimId).orElse(null);
+        if (eobFinal != null) {
+            result.put("eobFinal", eobFinal);
+            result.put("totalPatientResponsibility", eobFinal.getTotalPatientResponsibility());
+        } else {
+            result.put("totalPatientResponsibility", claim.getFinalOutOfPocket());
+        }
+        
+        return result;
+    }
+    
+    // Process payment for claim
+    @Transactional
+    public boolean processPayment(int patientId, int claimId, double paymentAmount) {
+        Claim claim = claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found"));
+        
+        // Verify claim belongs to patient
+        if (claim.getPatient().getPatientId() != patientId) {
+            throw new RuntimeException("Access denied");
+        }
+        
+        // Verify claim is processed and ready for payment
+        if (!"processed".equals(claim.getStatus())) {
+            throw new RuntimeException("Claim is not ready for payment. Current status: " + claim.getStatus());
+        }
+        
+        // Get total patient responsibility
+        EOBFinal eobFinal = eobFinalRepository.findByClaimClaimId(claimId).orElse(null);
+        double totalPatientResponsibility = eobFinal != null ? 
+            eobFinal.getTotalPatientResponsibility() : claim.getFinalOutOfPocket();
+        
+        // Validate payment amount
+        if (paymentAmount <= 0) {
+            throw new RuntimeException("Payment amount must be greater than 0");
+        }
+        
+        if (paymentAmount > totalPatientResponsibility) {
+            throw new RuntimeException("Payment amount exceeds total patient responsibility");
+        }
+        
+        // Process payment (in real system, integrate with payment gateway)
+        boolean paymentSuccessful = processPaymentGateway(paymentAmount);
+        
+        if (paymentSuccessful) {
+            // Check if payment is full or partial
+            if (Math.abs(paymentAmount - totalPatientResponsibility) < 0.01) {
+                // Full payment
+                claim.setStatus("paid");
+                claim.setFinalOutOfPocket(0.0);
+            } else {
+                // Partial payment
+                claim.setStatus("partially_paid");
+                claim.setFinalOutOfPocket(totalPatientResponsibility - paymentAmount);
+            }
+            
+            claimRepository.save(claim);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    private boolean processPaymentGateway(double amount) {
+        // Simulate payment processing
+        // In real system, integrate with Stripe, PayPal, etc.
+        try {
+            // Simulate payment processing delay
+            Thread.sleep(1000);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 }

@@ -2,6 +2,9 @@ package com.example.demo.dao;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import com.example.demo.bean.Credentials;
 
 import java.util.List;
@@ -15,4 +18,8 @@ public interface CredentialRepository extends JpaRepository<Credentials, Integer
 
     // Correct delete method
     void deleteByProvider_ProviderId(int providerId);
+    
+ // In CredentialRepository.java
+    @Query("SELECT c FROM Credentials c WHERE c.insurer.insurerId = :insurerId")
+    Optional<Credentials> findByInsurerInsurerId(@Param("insurerId") int insurerId);
 }

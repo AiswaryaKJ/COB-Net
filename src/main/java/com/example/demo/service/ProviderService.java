@@ -5,9 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.bean.Claim;
+import com.example.demo.bean.InsurancePlan;
 import com.example.demo.bean.Patient;
+import com.example.demo.bean.PatientCoverage;
 import com.example.demo.bean.Provider;
 import com.example.demo.dao.ClaimRepository;
+import com.example.demo.dao.InsurancePlanRepository;
+import com.example.demo.dao.PatientCoverageRepository;
 import com.example.demo.dao.PatientRepository;
 import com.example.demo.dao.ProviderRepository;
 
@@ -29,25 +33,56 @@ public class ProviderService {
     @Autowired
     private ProviderRepository providerRepository;
     
-    // Submit a new claim
+    @Autowired
+    PatientCoverageRepository patientCoverageRepository;
+    
+    @Autowired
+    InsurancePlanRepository insurancePlanRepository;
+    
+ // Submit a new claim WITH NETWORK CHECK
     @Transactional
     public Claim submitClaim(Claim claim) {
+        // Validate provider exists and is IN-NETWORK
+        Provider provider = providerRepository.findById(claim.getProvider().getProviderId())
+            .orElseThrow(() -> new RuntimeException("Provider not found with ID: " + claim.getProvider().getProviderId()));
+        
+        // Check network status
+        if (!"IN".equalsIgnoreCase(provider.getNetworkStatus())) {
+            throw new RuntimeException("Provider is out of network. Network status: " + provider.getNetworkStatus());
+        }
+        
         // Validate patient exists
         Patient patient = patientRepository.findById(claim.getPatient().getPatientId())
             .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + claim.getPatient().getPatientId()));
         
-        // Validate provider exists
-        Provider provider = providerRepository.findById(claim.getProvider().getProviderId())
-            .orElseThrow(() -> new RuntimeException("Provider not found with ID: " + claim.getProvider().getProviderId()));
+        // Get patient's insurance coverage
+        List<PatientCoverage> coverages = patientCoverageRepository.findByPatientId(patient.getPatientId());
+        
+        // Set primary and secondary insurers from coverage
+        coverages.sort((c1, c2) -> Integer.compare(c1.getCoverageOrder(), c2.getCoverageOrder()));
+        
+        for (PatientCoverage coverage : coverages) {
+            InsurancePlan plan = insurancePlanRepository.findById(coverage.getPlanId()).orElse(null);
+            if (plan != null && plan.getInsurer() != null) {
+                if (coverage.getCoverageOrder() == 1) {
+                    claim.setPrimaryInsurer(plan.getInsurer());
+                } else if (coverage.getCoverageOrder() == 2) {
+                    claim.setSecondaryInsurer(plan.getInsurer());
+                }
+            }
+        }
+        
+        // Validate at least primary insurer exists
+        if (claim.getPrimaryInsurer() == null) {
+            throw new RuntimeException("Patient does not have primary insurance coverage");
+        }
         
         // Set the validated entities
         claim.setPatient(patient);
         claim.setProvider(provider);
         
-        // Set default status if not set
-        if (claim.getStatus() == null) {
-            claim.setStatus("Submitted");
-        }
+        // Set default status
+        claim.setStatus("submitted");
         
         // Set claim date if not set
         if (claim.getClaimDate() == null) {

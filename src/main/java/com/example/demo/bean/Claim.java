@@ -82,6 +82,39 @@ public class Claim {
         this.patient = patient;
         this.provider = provider;
     }
+    
+    // NEW: Insurer relationships
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "primary_insurer_id")
+    private Insurer primaryInsurer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "secondary_insurer_id")
+    private Insurer secondaryInsurer;
+
+    // NEW: Helper methods for insurer names
+    @Transient
+    public String getPrimaryInsurerName() {
+        return primaryInsurer != null ? primaryInsurer.getPayerName() : null;
+    }
+
+    @Transient
+    public String getSecondaryInsurerName() {
+        return secondaryInsurer != null ? secondaryInsurer.getPayerName() : null;
+    }
+
+    // ... existing constructors, getters, and setters ...
+
+    // NEW: Insurer getters and setters
+    public Insurer getPrimaryInsurer() { return primaryInsurer; }
+    public void setPrimaryInsurer(Insurer primaryInsurer) { 
+        this.primaryInsurer = primaryInsurer; 
+    }
+
+    public Insurer getSecondaryInsurer() { return secondaryInsurer; }
+    public void setSecondaryInsurer(Insurer secondaryInsurer) { 
+        this.secondaryInsurer = secondaryInsurer; 
+    }
 
     // Getters and Setters (including patient and provider)
     public int getClaimId() { return claimId; }

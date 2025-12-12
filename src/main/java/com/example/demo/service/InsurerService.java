@@ -25,6 +25,15 @@ public class InsurerService {
     @Autowired
     private SettlementRepository settlementRepository;
     
+    @Autowired
+    private EOB1Repository eob1Repository;
+    
+    @Autowired
+    private EOB2Repository eob2Repository;
+    
+    @Autowired
+    private EOBFinalRepository eobFinalRepository;
+    
     // Get all pending claims (status = 'Submitted')
     public List<Claim> getPendingClaims() {
         return claimRepository.findByStatus("Submitted");
@@ -362,5 +371,294 @@ public class InsurerService {
         
         patientCoverageRepository.saveAll(allCoverages);
         System.out.println("Annual limits reset completed at " + LocalDate.now());
+    }
+    
+    // Get claims for primary insurer
+    public List<Claim> getClaimsForPrimaryInsurer(int insurerId) {
+        return claimRepository.findByPrimaryInsurerInsurerIdAndStatus(insurerId, "submitted");
+    }
+    
+    // Get claims for secondary insurer
+    public List<Claim> getClaimsForSecondaryInsurer(int insurerId) {
+        return claimRepository.findBySecondaryInsurerInsurerIdAndStatus(insurerId, "pending");
+    }
+    
+    // Primary insurer processes claim
+    @Transactional
+    public EOB1 processAsPrimaryInsurer(int claimId, int insurerId) {
+        Claim claim = claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found"));
+        
+        // Validate insurer is the primary insurer for this claim
+        if (claim.getPrimaryInsurer() == null || claim.getPrimaryInsurer().getInsurerId() != insurerId) {
+            throw new RuntimeException("You are not the primary insurer for this claim");
+        }
+        
+        // Validate claim status
+        if (!"submitted".equals(claim.getStatus())) {
+            throw new RuntimeException("Claim cannot be processed. Current status: " + claim.getStatus());
+        }
+        
+        // Get patient's primary coverage
+        PatientCoverage primaryCoverage = patientCoverageRepository.findByPatientIdAndCoverageOrder(
+            claim.getPatient().getPatientId(), 1)
+            .orElseThrow(() -> new RuntimeException("Primary coverage not found"));
+        
+        InsurancePlan primaryPlan = insurancePlanRepository.findById(primaryCoverage.getPlanId())
+            .orElseThrow(() -> new RuntimeException("Primary insurance plan not found"));
+        
+        // Calculate EOB1 using detailed logic
+        double[] primaryResult = calculateEOB(
+            primaryPlan, 
+            primaryCoverage, 
+            claim.getBilledAmount(), 
+            true
+        );
+        
+        // Create EOB1
+        EOB1 eob1 = new EOB1();
+        eob1.setClaim(claim);
+        eob1.setInsurer(claim.getPrimaryInsurer());
+        eob1.setBilledAmount(claim.getBilledAmount());
+        eob1.setDeductibleApplied(primaryResult[0]);
+        eob1.setCopayApplied(primaryResult[1]);
+        eob1.setCoinsuranceApplied(primaryResult[2]);
+        eob1.setPatientResponsibility(primaryResult[3]);
+        eob1.setInsurerPayment(primaryResult[4]);
+        
+        // Update patient coverage tracking
+        updatePatientCoverage(primaryCoverage, primaryResult[0], primaryResult[3]);
+        
+        // Save EOB1
+        eob1 = eob1Repository.save(eob1);
+        
+        // Update claim status
+        if (claim.getSecondaryInsurer() != null) {
+            claim.setStatus("pending"); // Send to secondary insurer
+        } else {
+            claim.setStatus("processed");
+            // Create EOBFinal immediately if no secondary insurer
+            createEOBFinal(claim, eob1, null);
+        }
+        
+        claimRepository.save(claim);
+        
+        return eob1;
+    }
+    
+    // Secondary insurer processes claim
+    @Transactional
+    public EOB2 processAsSecondaryInsurer(int claimId, int insurerId) {
+        Claim claim = claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found"));
+        
+        // Validate insurer is the secondary insurer for this claim
+        if (claim.getSecondaryInsurer() == null || claim.getSecondaryInsurer().getInsurerId() != insurerId) {
+            throw new RuntimeException("You are not the secondary insurer for this claim");
+        }
+        
+        // Validate claim status
+        if (!"pending".equals(claim.getStatus())) {
+            throw new RuntimeException("Claim is not pending secondary processing. Current status: " + claim.getStatus());
+        }
+        
+        // Get EOB1 to see what primary insurer covered
+        EOB1 eob1 = eob1Repository.findByClaimClaimId(claimId)
+            .orElseThrow(() -> new RuntimeException("Primary EOB not found"));
+        
+        // Get patient's secondary coverage
+        PatientCoverage secondaryCoverage = patientCoverageRepository.findByPatientIdAndCoverageOrder(
+            claim.getPatient().getPatientId(), 2)
+            .orElseThrow(() -> new RuntimeException("Secondary coverage not found"));
+        
+        InsurancePlan secondaryPlan = insurancePlanRepository.findById(secondaryCoverage.getPlanId())
+            .orElseThrow(() -> new RuntimeException("Secondary insurance plan not found"));
+        
+        // Calculate remaining amount after primary
+        double remainingAmount = eob1.getPatientResponsibility();
+        
+        // Calculate EOB2
+        double[] secondaryResult = calculateEOB(
+            secondaryPlan, 
+            secondaryCoverage, 
+            remainingAmount, 
+            false
+        );
+        
+        // Create EOB2
+        EOB2 eob2 = new EOB2();
+        eob2.setClaim(claim);
+        eob2.setInsurer(claim.getSecondaryInsurer());
+        eob2.setBilledAmount(remainingAmount);
+        eob2.setDeductibleApplied(secondaryResult[0]);
+        eob2.setCopayApplied(secondaryResult[1]);
+        eob2.setCoinsuranceApplied(secondaryResult[2]);
+        eob2.setPatientResponsibility(secondaryResult[3]);
+        eob2.setInsurerPayment(secondaryResult[4]);
+        
+        // Update patient coverage tracking
+        updatePatientCoverage(secondaryCoverage, secondaryResult[0], secondaryResult[3]);
+        
+        // Save EOB2
+        eob2 = eob2Repository.save(eob2);
+        
+        // Update claim status and create EOBFinal
+        claim.setStatus("processed");
+        claimRepository.save(claim);
+        
+        // Create EOBFinal with both EOBs
+        createEOBFinal(claim, eob1, eob2);
+        
+        return eob2;
+    }
+    
+    // Detailed EOB calculation logic (based on your example)
+    private double[] calculateEOB(InsurancePlan plan, PatientCoverage coverage, 
+                                 double amountToProcess, boolean isPrimary) {
+        
+        double deductible = plan.getDeductible();
+        double copay = plan.getCopay();
+        double coinsuranceRate = plan.getCoinsurance() / 100.0;
+        double oopMax = plan.getOutOfPocketMax();
+        
+        double deductiblePaid = coverage.getDeductiblePaidThisYear() != null ? 
+                               coverage.getDeductiblePaidThisYear() : 0.0;
+        double oopPaid = coverage.getOopPaidThisYear() != null ? 
+                        coverage.getOopPaidThisYear() : 0.0;
+        
+        // Initialize results
+        double deductibleApplied = 0;
+        double copayApplied = 0;
+        double coinsuranceApplied = 0;
+        double patientResponsibility = 0;
+        double insurerPayment = 0;
+        
+        // CASE 1: Deductible not met
+        if (deductiblePaid < deductible) {
+            double deductibleRemaining = deductible - deductiblePaid;
+            deductibleApplied = Math.min(amountToProcess, deductibleRemaining);
+            amountToProcess -= deductibleApplied;
+            
+            if (amountToProcess > 0) {
+                // Apply copay
+                copayApplied = Math.min(amountToProcess, copay);
+                amountToProcess -= copayApplied;
+                
+                // Apply coinsurance
+                if (amountToProcess > 0) {
+                    coinsuranceApplied = amountToProcess * coinsuranceRate;
+                    amountToProcess -= coinsuranceApplied;
+                    insurerPayment = amountToProcess; // What's left after coinsurance
+                }
+            }
+        } 
+        // CASE 2: Deductible already met
+        else {
+            // Apply copay
+            copayApplied = Math.min(amountToProcess, copay);
+            amountToProcess -= copayApplied;
+            
+            // Apply coinsurance
+            if (amountToProcess > 0) {
+                coinsuranceApplied = amountToProcess * coinsuranceRate;
+                amountToProcess -= coinsuranceApplied;
+                insurerPayment = amountToProcess;
+            }
+        }
+        
+        // Calculate patient responsibility
+        patientResponsibility = deductibleApplied + copayApplied + coinsuranceApplied;
+        
+        // Apply OOP max logic
+        if (oopPaid + patientResponsibility > oopMax) {
+            double oopSavings = (oopPaid + patientResponsibility) - oopMax;
+            patientResponsibility -= oopSavings;
+            insurerPayment += oopSavings;
+        }
+        
+        return new double[]{
+            deductibleApplied,      // 0
+            copayApplied,           // 1
+            coinsuranceApplied,     // 2
+            patientResponsibility,  // 3
+            insurerPayment          // 4
+        };
+    }
+    
+    private void updatePatientCoverage(PatientCoverage coverage, double deductibleApplied, 
+                                       double patientResponsibility) {
+        // Update deductible tracking
+        double currentDeductiblePaid = coverage.getDeductiblePaidThisYear() != null ? 
+                                      coverage.getDeductiblePaidThisYear() : 0.0;
+        coverage.setDeductiblePaidThisYear(currentDeductiblePaid + deductibleApplied);
+        
+        // Update OOP tracking
+        double currentOopPaid = coverage.getOopPaidThisYear() != null ? 
+                               coverage.getOopPaidThisYear() : 0.0;
+        coverage.setOopPaidThisYear(currentOopPaid + patientResponsibility);
+        
+        // Update remaining amounts
+        InsurancePlan plan = insurancePlanRepository.findById(coverage.getPlanId()).orElse(null);
+        if (plan != null) {
+            coverage.setDeductibleRemaining(Math.max(0, plan.getDeductible() - coverage.getDeductiblePaidThisYear()));
+            coverage.setOopRemaining(Math.max(0, plan.getOutOfPocketMax() - coverage.getOopPaidThisYear()));
+        }
+        
+        patientCoverageRepository.save(coverage);
+    }
+    
+    private void createEOBFinal(Claim claim, EOB1 eob1, EOB2 eob2) {
+        EOBFinal eobFinal = new EOBFinal();
+        eobFinal.setClaim(claim);
+        eobFinal.setTotalBilledAmount(claim.getBilledAmount());
+        eobFinal.setPrimaryEOB(eob1);
+        eobFinal.setSecondaryEOB(eob2);
+        
+        double totalPatientResponsibility = eob1.getPatientResponsibility();
+        double totalInsurancePayment = eob1.getInsurerPayment();
+        
+        if (eob2 != null) {
+            totalPatientResponsibility = eob2.getPatientResponsibility();
+            totalInsurancePayment += eob2.getInsurerPayment();
+        }
+        
+        eobFinal.setTotalPatientResponsibility(totalPatientResponsibility);
+        eobFinal.setTotalInsurancePayment(totalInsurancePayment);
+        
+        // Update claim with final patient responsibility
+        claim.setFinalOutOfPocket(totalPatientResponsibility);
+        claimRepository.save(claim);
+        
+        eobFinalRepository.save(eobFinal);
+    }
+    
+    // Get EOB details for a claim
+    public Map<String, Object> getEOBDetails(int claimId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        EOB1 eob1 = eob1Repository.findByClaimClaimId(claimId).orElse(null);
+        EOB2 eob2 = eob2Repository.findByClaimClaimId(claimId).orElse(null);
+        EOBFinal eobFinal = eobFinalRepository.findByClaimClaimId(claimId).orElse(null);
+        
+        result.put("eob1", eob1);
+        result.put("eob2", eob2);
+        result.put("eobFinal", eobFinal);
+        
+        return result;
+    }
+    
+ // Add to your InsurerService class
+    public Claim getClaimById(int claimId) {
+        return claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found with ID: " + claimId));
+    }
+
+    // Add these methods for history
+    public List<Claim> getClaimsByPrimaryInsurerAndStatus(int insurerId, String status) {
+        return claimRepository.findByPrimaryInsurerInsurerIdAndStatus(insurerId, status);
+    }
+
+    public List<Claim> getClaimsBySecondaryInsurerAndStatus(int insurerId, String status) {
+        return claimRepository.findBySecondaryInsurerInsurerIdAndStatus(insurerId, status);
     }
 }

@@ -4,7 +4,7 @@ import java.util.List;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "InsurancePlan")
+@Table(name = "insurance_plan")
 public class InsurancePlan {
 
     @Id
@@ -15,9 +15,8 @@ public class InsurancePlan {
     @Column(name = "plan_name", nullable = false, length = 100)
     private String planName;
 
-    @Column(name = "payer_name", nullable = false, length = 100)
-    private String payerName;
-
+    // REMOVED: payerName field
+    
     @Column(name = "policy_number", unique = true, nullable = false, length = 50)
     private String policyNumber;
 
@@ -36,9 +35,13 @@ public class InsurancePlan {
     @Column(name = "coinsurance", nullable = false)
     private double coinsurance;
     
-    // NEW: Out of Pocket Maximum
     @Column(name = "out_of_pocket_max", nullable = false)
     private double outOfPocketMax = 5000.00;
+
+    // NEW: Relationship with Insurer
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "insurer_id", nullable = false)
+    private Insurer insurer;
 
     @OneToMany(mappedBy = "insurancePlan")
     private List<PatientCoverage> patientCoverages;
@@ -55,9 +58,8 @@ public class InsurancePlan {
     public String getPlanName() { return planName; }
     public void setPlanName(String planName) { this.planName = planName; }
 
-    public String getPayerName() { return payerName; }
-    public void setPayerName(String payerName) { this.payerName = payerName; }
-
+    // REMOVED: getPayerName() and setPayerName()
+    
     public String getPolicyNumber() { return policyNumber; }
     public void setPolicyNumber(String policyNumber) { this.policyNumber = policyNumber; }
 
@@ -76,14 +78,32 @@ public class InsurancePlan {
     public double getCoinsurance() { return coinsurance; }
     public void setCoinsurance(double coinsurance) { this.coinsurance = coinsurance; }
     
-    // NEW: OOP Max
     public double getOutOfPocketMax() { return outOfPocketMax; }
     public void setOutOfPocketMax(double outOfPocketMax) { 
         this.outOfPocketMax = outOfPocketMax; 
     }
 
+    // NEW: Insurer getter and setter
+    public Insurer getInsurer() { return insurer; }
+    public void setInsurer(Insurer insurer) { this.insurer = insurer; }
+
+    // Convenience method to get payer name through insurer
+    public String getPayerName() {
+        return (insurer != null) ? insurer.getPayerName() : null;
+    }
+
     public List<PatientCoverage> getPatientCoverages() { return patientCoverages; }
     public void setPatientCoverages(List<PatientCoverage> patientCoverages) { 
         this.patientCoverages = patientCoverages; 
+    }
+
+    @Override
+    public String toString() {
+        return "InsurancePlan{" +
+                "planId=" + planId +
+                ", planName='" + planName + '\'' +
+                ", insurer=" + (insurer != null ? insurer.getPayerName() : "null") +
+                ", policyNumber='" + policyNumber + '\'' +
+                '}';
     }
 }
