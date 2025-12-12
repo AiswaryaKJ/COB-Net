@@ -252,15 +252,11 @@
                         <div class="form-group">
                             <label class="form-label required">Provider ID</label>
                             
-                            <input type="hidden" name="provider.providerId" 
-                                   value="${loggedInProviderId}">
+                            <input type="text" class="form-control" name="provider.providerId" 
+                                   placeholder="Enter your Provider ID" 
+                                   required>
                                    
-                            <input type="text" class="form-control" 
-                                   value="${loggedInProviderId}" 
-                                   placeholder="Auto-assigned from login" 
-                                   readonly>
-                                   
-                            <small class="form-text text-muted">Automatically assigned from your login credentials.</small>
+                            <small class="form-text text-muted">Enter the unique provider identifier.</small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -381,8 +377,8 @@
                                 </optgroup>
                             </select>
                             <small class="search-hint">Type to search or scroll to browse codes</small>
-                            <div id="procedurePreview" class="code-preview">
-                                <span id="selectedProcedure">No procedure code selected</span>
+                            <div id="diagnosisPreview" class="code-preview">
+                                <span id="selectedDiagnosis">No diagnosis code selected</span>
                             </div>
                         </div>
                     </div>
@@ -491,7 +487,7 @@
                 });
             }
             
-            // Auto-fetch patient name (simulated)
+            // Auto-fetch patient name (simulated) and Provider Name fetch logic remains
             const patientIdInput = document.querySelector('input[name="patient.patientId"]');
             const providerIdInput = document.querySelector('input[name="provider.providerId"]');
             
@@ -502,6 +498,7 @@
             }
             
             if (providerIdInput) {
+                // This will now trigger on blur of the manually entered Provider ID
                 providerIdInput.addEventListener('blur', function() {
                     console.log('Fetching provider info for ID:', this.value);
                 });
@@ -517,8 +514,12 @@
                 $('#selectedDiagnosis').text('No diagnosis code selected');
                 $('#selectedProcedure').text('No procedure code selected');
                 
-                // Note: The auto-fetched Provider ID will NOT be reset as it's set by the model.
-                // You would need to reload the page or clear the hidden input value separately if desired.
+                // Use the standard form reset for all fields
+                $('#claimForm').trigger('reset');
+                
+                // Re-trigger Select2 change after reset to update visual state
+                $('.diagnosis-select').trigger('change.select2');
+                $('.procedure-select').trigger('change.select2');
             });
         });
     </script>

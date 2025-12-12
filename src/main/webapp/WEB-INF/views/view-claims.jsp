@@ -10,23 +10,16 @@
     <div class="container mt-5">
         <h2>Healthcare Claims</h2>
         
-        <!-- Search Forms -->
         <div class="row mb-3">
-            <div class="col-md-6">
-                <form action="searchbypatient" method="GET" class="d-flex">
-                    <input type="number" name="patientId" class="form-control me-2" placeholder="Search by Patient ID">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <form action="searchbyprovider" method="GET" class="d-flex">
-                    <input type="number" name="providerId" class="form-control me-2" placeholder="Search by Provider ID">
-                    <button type="submit" class="btn btn-primary">Search</button>
+            <div class="col-md-12">
+                <form onsubmit="return false;" class="d-flex">
+                    <input type="number" id="patientIdSearchInput" class="form-control me-2" placeholder="Search by Patient ID">
+                    <button type="button" class="btn btn-primary" id="filterPatientBtn">Search</button>
+                    <button type="button" class="btn btn-secondary ms-2" id="resetFilterBtn">Reset</button>
                 </form>
             </div>
         </div>
         
-        <!-- Error/Success Messages -->
         <% if (request.getAttribute("error") != null) { %>
             <div class="alert alert-danger">${error}</div>
         <% } %>
@@ -34,13 +27,11 @@
             <div class="alert alert-success">${message}</div>
         <% } %>
         
-        <!-- Search Type -->
         <% if (request.getAttribute("searchType") != null) { %>
             <h4>${searchType}</h4>
         <% } %>
         
-        <!-- Claims Table -->
-        <table class="table table-striped">
+        <table class="table table-striped" id="claimsTable">
             <thead>
                 <tr>
                     <th>Claim ID</th>
@@ -58,7 +49,7 @@
                        for (com.example.demo.bean.Claim claim : claims) { %>
                         <tr>
                             <td><%= claim.getClaimId() %></td>
-                            <td><%= claim.getPatient().getPatientId() %></td>
+                            <td data-patient-id="<%= claim.getPatient().getPatientId() %>"><%= claim.getPatient().getPatientId() %></td>
                             <td><%= claim.getProvider().getProviderId() %></td>
                             <td>$<%= claim.getBilledAmount() %></td>
                             <td><%= claim.getClaimDate() %></td>
@@ -81,7 +72,6 @@
             </tbody>
         </table>
         
-        <!-- Update Status Modal -->
         <div class="modal fade" id="statusModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -119,6 +109,64 @@
             document.getElementById('claimIdInput').value = claimId;
             new bootstrap.Modal(document.getElementById('statusModal')).show();
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('patientIdSearchInput');
+            const filterBtn = document.getElementById('filterPatientBtn');
+            const resetBtn = document.getElementById('resetFilterBtn');
+            const tableBody = document.querySelector('#claimsTable tbody');
+            const rows = tableBody ? tableBody.querySelectorAll('tr') : [];
+
+            // Function to perform the filtering
+            function filterClaims() {
+                const filterValue = searchInput.value.trim();
+                
+                // If there is no input, show all rows
+                if (filterValue === '') {
+                    rows.forEach(row => row.style.display = '');
+                    return;
+                }
+                
+                rows.forEach(row => {
+                    // Check if the row is the "No claims found" row and skip it
+                    if (row.querySelector('td[colspan="7"]')) {
+                        return;
+                    }
+
+                    // Get the Patient ID from the data attribute (for accuracy)
+                    const patientIdCell = row.querySelector('td[data-patient-id]');
+                    
+                    if (patientIdCell) {
+                        const rowPatientId = patientIdCell.getAttribute('data-patient-id');
+                        
+                        // Check if the row's Patient ID starts with the filter value
+                        if (rowPatientId.startsWith(filterValue)) {
+                            row.style.display = ''; // Show row
+                        } else {
+                            row.style.display = 'none'; // Hide row
+                        }
+                    }
+                });
+            }
+
+            // Event listener for the Search button
+            if (filterBtn) {
+                filterBtn.addEventListener('click', filterClaims);
+            }
+
+            // Optional: Filter as the user types
+            if (searchInput) {
+                 searchInput.addEventListener('keyup', filterClaims);
+            }
+
+            // Event listener for the Reset button
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    searchInput.value = ''; // Clear the input field
+                    rows.forEach(row => row.style.display = ''); // Show all rows
+                });
+            }
+        });
     </script>
 </body>
 </html>
