@@ -1,236 +1,223 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Healthcare Claim Management System</title>
+    <title>Healthcare Claim Management System Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
+        /* 1. CSS Variables and Base Styles */
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --light-bg: #f8f9fa;
+            --primary-color: #007bff; /* Blue for trust and professionalism */
+            --secondary-color: #28a745; /* Green for success/actions */
+            --accent-color: #6c757d; /* Grey for subtle elements */
+            --background-light: #f4f7fa; /* Very light, clean background */
+            --card-background: #ffffff;
+            --text-dark: #343a40;
+            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-dark);
             min-height: 100vh;
-            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
         }
-        
+
+        /* 2. Main Container and Welcome Card */
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            padding: 0; /* Remove default container padding */
         }
-        
+
         .welcome-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            margin-top: 50px;
+            background-color: var(--card-background);
+            border-radius: 15px;
+            box-shadow: var(--shadow-lg);
+            padding: 40px;
+            margin: 20px;
+            animation: fadeIn 0.8s ease-out;
         }
-        
+
+        /* 3. Header Section */
         .header-section {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 40px;
             text-align: center;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 30px;
         }
-        
+
         .header-section h1 {
-            font-size: 3rem;
-            margin-bottom: 15px;
             font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
         }
-        
-        .header-section p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+
+        .header-section .lead {
+            font-weight: 300;
+            color: var(--accent-color);
         }
-        
-        .features-section {
-            padding: 40px;
+
+        /* 4. Features Grid */
+        .features-section h2 {
+            font-weight: 500;
+            margin-bottom: 30px;
         }
-        
+
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin: 40px 0;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
         }
-        
+
         .feature-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
+            background: linear-gradient(145deg, var(--card-background), #f8f9fa);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid #e0e0e0;
         }
-        
+
         .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
-        
+
         .feature-icon {
-            font-size: 3rem;
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-        }
-        
-        .feature-card h3 {
+            font-size: 2.5rem;
             color: var(--primary-color);
             margin-bottom: 15px;
-            font-size: 1.5rem;
+            display: inline-block;
         }
-        
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
         .feature-card p {
-            color: #666;
-            line-height: 1.6;
+            font-size: 0.95rem;
+            color: var(--accent-color);
         }
-        
+
+        /* 5. Action Buttons (The most critical part) */
         .action-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
+            justify-content: center;
             gap: 20px;
-            margin-top: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
         }
-        
+
         .action-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            padding: 20px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 15px 30px;
+            border-radius: 50px; /* Pill shape for modern look */
             text-decoration: none;
-            text-align: center;
+            font-weight: 500;
+            font-size: 1.1rem;
+            min-width: 250px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden; /* For ripple effect */
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+
+        /* Color variations for action buttons */
+        .action-btn.btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .action-btn.btn-success {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
             color: white;
         }
         
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-color), #219653);
+        .action-btn.btn-info {
+            background-color: #17a2b8; /* Bootstrap Info default */
+            border-color: #17a2b8;
             color: white;
         }
-        
-        .btn-info {
-            background: linear-gradient(135deg, #00cec9, #0984e3);
-            color: white;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #fdcb6e, #e17055);
-            color: white;
-        }
-        
+
         .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+            opacity: 0.9;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
         }
         
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
         .btn-icon {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
+            margin-right: 15px;
         }
-        
-        .statistics-section {
-            background: var(--light-bg);
-            border-radius: 15px;
-            padding: 30px;
-            margin-top: 40px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 1rem;
-        }
-        
+
+        /* 6. Footer Section */
         .footer-section {
             text-align: center;
-            padding: 30px;
-            margin-top: 40px;
-            color: #666;
-            border-top: 1px solid #e0e0e0;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--accent-color);
         }
-        
+
         .quick-links {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
+            margin-top: 10px;
         }
-        
+
         .quick-link {
-            color: var(--secondary-color);
+            color: var(--accent-color);
+            margin: 0 10px;
             text-decoration: none;
-            transition: color 0.3s ease;
+            transition: color 0.2s;
         }
-        
+
         .quick-link:hover {
             color: var(--primary-color);
             text-decoration: underline;
         }
-        
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Adjustments */
         @media (max-width: 768px) {
+            .welcome-card {
+                padding: 30px 20px;
+            }
             .header-section h1 {
-                font-size: 2.2rem;
+                font-size: 2rem;
             }
-            
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .action-buttons {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                gap: 15px;
             }
-            
-            .container {
-                padding: 10px;
+            .action-btn {
+                min-width: 100%;
             }
         }
     </style>
@@ -238,15 +225,13 @@
 <body>
     <div class="container">
         <div class="welcome-card">
-            <!-- Header Section -->
             <div class="header-section">
                 <h1><i class="fas fa-heartbeat me-3"></i>Healthcare Claim Management</h1>
                 <p class="lead">Professional Medical Claim Processing System for Healthcare Providers</p>
             </div>
             
-            <!-- Features Section -->
             <div class="features-section">
-                <h2 class="text-center mb-4" style="color: var(--primary-color);">Why Choose Our System?</h2>
+                <h2 class="text-center mb-4" style="color: var(--primary-color);">System Overview</h2>
                 
                 <div class="features-grid">
                     <div class="feature-card">
@@ -254,7 +239,7 @@
                             <i class="fas fa-bolt"></i>
                         </div>
                         <h3>Fast Processing</h3>
-                        <p>Submit and process claims in real-time with automated validation and quick turnaround.</p>
+                        <p>Submit and process claims in real-time with automated validation and quick turnaround for payments.</p>
                     </div>
                     
                     <div class="feature-card">
@@ -262,7 +247,7 @@
                             <i class="fas fa-shield-alt"></i>
                         </div>
                         <h3>Secure & Compliant</h3>
-                        <p>HIPAA compliant with 256-bit encryption ensuring patient data security and privacy.</p>
+                        <p>Fully HIPAA compliant system with 256-bit encryption ensuring total patient data security and privacy.</p>
                     </div>
                     
                     <div class="feature-card">
@@ -270,19 +255,10 @@
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <h3>Real-time Analytics</h3>
-                        <p>Track claim status, generate reports, and monitor performance with detailed analytics.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <h3>Mobile Friendly</h3>
-                        <p>Access the system from any device with our responsive, mobile-optimized interface.</p>
+                        <p>Track claim status, generate detailed financial reports, and monitor system performance effortlessly.</p>
                     </div>
                 </div>
                 
-                <!-- Action Buttons -->
                 <h3 class="text-center mb-4" style="color: var(--primary-color);">Quick Actions</h3>
                 <div class="action-buttons">
                     <a href="submitclaim" class="action-btn btn-primary">
@@ -299,47 +275,15 @@
                         <i class="btn-icon fas fa-search"></i>
                         <span>Search by Patient</span>
                     </a>
-                    
-                    <a href="searchprovider" class="action-btn btn-warning">
-                        <i class="btn-icon fas fa-user-md"></i>
-                        <span>Search by Provider</span>
-                    </a>
                 </div>
             </div>
             
-            <!-- Statistics Section -->
-            <div class="statistics-section">
-                <h3 class="text-center mb-4" style="color: var(--primary-color);">System Overview</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalClaims">0</div>
-                        <div class="stat-label">Total Claims Processed</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-value">99.7%</div>
-                        <div class="stat-label">System Uptime</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-value">24-48</div>
-                        <div class="stat-label">Hours Processing Time</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-value">100%</div>
-                        <div class="stat-label">HIPAA Compliant</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Footer Section -->
             <div class="footer-section">
                 <p>© 2025 Healthcare Claim Management System. All rights reserved.</p>
                 <div class="quick-links">
-                    <a href="#" class="quick-link">Privacy Policy</a>
-                    <a href="#" class="quick-link">Terms of Service</a>
-                    <a href="#" class="quick-link">Support Center</a>
+                    <a href="#" class="quick-link">Privacy Policy</a> | 
+                    <a href="#" class="quick-link">Terms of Service</a> | 
+                    <a href="#" class="quick-link">Support Center</a> | 
                     <a href="#" class="quick-link">Contact Us</a>
                 </div>
                 <p class="mt-3">
@@ -352,25 +296,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Animate statistics counter
-        function animateCounter(element, target, duration) {
-            let start = 0;
-            const increment = target / (duration / 16);
-            const timer = setInterval(() => {
-                start += increment;
-                if (start >= target) {
-                    element.textContent = target;
-                    clearInterval(timer);
-                } else {
-                    element.textContent = Math.floor(start);
-                }
-            }, 16);
-        }
-        
-        // Start animation when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            const totalClaimsElement = document.getElementById('totalClaims');
-            animateCounter(totalClaimsElement, 1542, 2000);
+            // Future JavaScript, e.g., for form validation or dynamic content loading
         });
     </script>
 </body>

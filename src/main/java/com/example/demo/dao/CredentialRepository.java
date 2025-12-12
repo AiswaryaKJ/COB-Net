@@ -16,6 +16,3 @@ public interface CredentialRepository extends JpaRepository<Credentials, Integer
     // Correct delete method
     void deleteByProvider_ProviderId(int providerId);
 }
-
-
-

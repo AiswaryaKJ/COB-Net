@@ -81,9 +81,5 @@ public class InsurerController {
         }
     }
     
-    @GetMapping("/test-calculation")
-    @ResponseBody
-    public Map<String, Object> testCalculation() {
-        return insurerService.testCalculationExample();
-    }
+ 
 }

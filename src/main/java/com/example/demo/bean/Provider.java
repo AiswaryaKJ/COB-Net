@@ -26,6 +26,25 @@ public class Provider {
     @OneToOne(mappedBy = "provider", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Credentials credentials;
 
+    @Transient
+    public Integer getId() {
+        return this.providerId;
+    }
+    
+    // Helper method for display
+    public String getDisplayName() {
+        return this.name + (this.specialty != null ? " - " + this.specialty : "");
+    }
+    
+    // Helper method for status display
+    public String getNetworkStatusBadge() {
+        if ("IN".equalsIgnoreCase(this.networkStatus)) {
+            return "In-Network";
+        } else if ("OUT".equalsIgnoreCase(this.networkStatus)) {
+            return "Out-of-Network";
+        }
+        return this.networkStatus != null ? this.networkStatus : "Unknown";
+    }
     // Getters and Setters
     public int getProviderId() { return providerId; }
     public void setProviderId(int providerId) { this.providerId = providerId; }
