@@ -28,7 +28,7 @@
                 ${insurerName} | ID: ${insurerId}
             </div>
             <div class="navbar-nav">
-                <a class="nav-link" href="/auth/logout">
+				<a class="nav-link" href="#" onclick="forceLogout()">
                     <i class="fas fa-sign-out-alt me-1"></i>Logout
                 </a>
             </div>
@@ -100,7 +100,7 @@
                     </a>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <a href="/auth/logout" class="btn btn-warning w-100">
+					<a href="#" class="btn btn-warning w-100" onclick="forceLogout()">
                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                     </a>
                 </div>
@@ -140,5 +140,15 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+	    <script>
+	        function forceLogout() {
+	            // This bypasses the server entirely and forces navigation in the browser
+	            window.location.href = '/auth/login?logout';
+	        }
+	    </script>
+	</body>
+	</html>
 </body>
 </html>

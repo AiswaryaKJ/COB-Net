@@ -46,7 +46,6 @@ public class ProviderController {
         mav.addObject("claim", new Claim());
         return mav;
     }
-    
     // Process claim submission
     @PostMapping("/submitclaim")
     public String submitClaim(@ModelAttribute("claim") Claim claim, Model model) {

@@ -7,6 +7,10 @@ import com.example.demo.dao.CredentialRepository;
 import com.example.demo.dao.PatientRepository;
 import com.example.demo.dao.ProviderRepository;
 
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -144,5 +148,9 @@ public class AuthController {
         credentialsRepository.save(credentials);
         model.addAttribute("message", "Registration successful! Please log in.");
         return "login";
+    }
+    @GetMapping("/app/logout-exit") 
+    public String forceLogoutRedirect() {
+        return "redirect:/auth/login?logout"; // Redirect to your desired login page
     }
 }
