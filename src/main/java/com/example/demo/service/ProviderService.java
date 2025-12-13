@@ -82,7 +82,7 @@ public class ProviderService {
         claim.setProvider(provider);
         
         // Set default status
-        claim.setStatus("Submitted");
+        claim.setStatus("submitted");
         
         // Set claim date if not set
         if (claim.getClaimDate() == null) {
