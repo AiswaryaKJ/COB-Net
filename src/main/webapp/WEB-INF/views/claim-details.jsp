@@ -261,16 +261,8 @@
                             <form action="/provider/updatestatus?providerId=${providerId}" method="POST" class="d-inline">
                                 <input type="hidden" name="claimId" value="${claim.claimId}">
                                 <div class="input-group" style="min-width: 300px;">
-                                    <select name="status" class="form-select">
-                                        <option value="Submitted" ${claim.status == 'Submitted' ? 'selected' : ''}>Submitted</option>
-                                        <option value="Processed" ${claim.status == 'Processed' ? 'selected' : ''}>Processed</option>
-                                        <option value="Approved" ${claim.status == 'Approved' ? 'selected' : ''}>Approved</option>
-                                        <option value="Denied" ${claim.status == 'Denied' ? 'selected' : ''}>Denied</option>
-                                        <option value="Paid" ${claim.status == 'Paid' ? 'selected' : ''}>Paid</option>
-                                    </select>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Update Status
-                                    </button>
+                                    
+                                   
                                 </div>
                             </form>
                             
