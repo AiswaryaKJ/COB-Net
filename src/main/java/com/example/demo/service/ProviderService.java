@@ -39,7 +39,7 @@ public class ProviderService {
     @Autowired
     InsurancePlanRepository insurancePlanRepository;
     
- // Submit a new claim WITH NETWORK CHECK
+    // Submit a new claim WITH NETWORK CHECK
     @Transactional
     public Claim submitClaim(Claim claim) {
         // Validate provider exists and is IN-NETWORK
@@ -48,7 +48,7 @@ public class ProviderService {
         
         // Check network status
         if (!"IN".equalsIgnoreCase(provider.getNetworkStatus())) {
-            throw new RuntimeException("Provider is out of network. Network status: " + provider.getNetworkStatus());
+            throw new RuntimeException("Cannot submit claim. Provider is out of network. Network status: " + provider.getNetworkStatus());
         }
         
         // Validate patient exists
@@ -82,7 +82,7 @@ public class ProviderService {
         claim.setProvider(provider);
         
         // Set default status
-        claim.setStatus("submitted");
+        claim.setStatus("Submitted");
         
         // Set claim date if not set
         if (claim.getClaimDate() == null) {
@@ -92,7 +92,7 @@ public class ProviderService {
         return claimRepository.save(claim);
     }
     
-    // Get all claims
+    // Get all claims for a provider
     public List<Claim> getAllClaims() {
         return claimRepository.findAll();
     }
@@ -113,12 +113,22 @@ public class ProviderService {
         return claimRepository.save(claim);
     }
     
-    // Delete claim
+    // Delete claim with validation
     @Transactional
-    public void deleteClaim(int claimId) {
-        if (!claimRepository.existsById(claimId)) {
-            throw new RuntimeException("Claim not found with ID: " + claimId);
+    public void deleteClaim(int claimId, int providerId) {
+        Claim claim = claimRepository.findById(claimId)
+            .orElseThrow(() -> new RuntimeException("Claim not found with ID: " + claimId));
+        
+        // Check if claim belongs to provider
+        if (claim.getProvider().getProviderId() != providerId) {
+            throw new RuntimeException("Access denied. Claim does not belong to this provider.");
         }
+        
+        // Check if claim can be deleted (only Submitted status)
+        if (!"Submitted".equalsIgnoreCase(claim.getStatus())) {
+            throw new RuntimeException("Cannot delete claim. Only claims with 'Submitted' status can be deleted. Current status: " + claim.getStatus());
+        }
+        
         claimRepository.deleteById(claimId);
     }
     
@@ -143,6 +153,7 @@ public class ProviderService {
         return providerRepository.findById(providerId)
             .orElseThrow(() -> new RuntimeException("Invalid Provider ID"));
     }
+    
     public Map<String, Object> getPatientWithClaims(int patientId) {
         Optional<Patient> patientOpt = patientRepository.findById(patientId);
         
@@ -208,11 +219,4 @@ public class ProviderService {
         
         return result;
     }
-
-	public Integer getProviderIdByUsername(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
 }
