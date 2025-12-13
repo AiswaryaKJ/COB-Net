@@ -56,7 +56,14 @@ public class AuthController {
                 case "ADMIN":
                     return "redirect:/admin/dashboard";   // /WEB-INF/views/admin.jsp
                 case "PROVIDER":
-                    return "redirect:/provider/welcome"; // handled by ProviderController
+                    if (stored.getProvider() != null) {
+                        int providerId = stored.getProvider().getProviderId();
+                        // Redirect with providerId parameter like patient/insurer
+                        return "redirect:/provider/welcome?providerId=" + providerId;
+                    } else {
+                        model.addAttribute("error", "No provider linked to this account");
+                        return "login";
+                    }
                 case "PATIENT":
                 	if (stored.getPatient() != null) {
                         int patientId = stored.getPatient().getPatientId();

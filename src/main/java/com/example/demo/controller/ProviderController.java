@@ -1,23 +1,15 @@
 package com.example.demo.controller;
 
 import java.util.List;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.bean.Claim;
+import com.example.demo.bean.Provider;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.ProviderService;
 
@@ -26,60 +18,137 @@ import com.example.demo.service.ProviderService;
 public class ProviderController {
     
     private final ProviderService providerService;
- @Autowired
- AdminService adminsrivice;
+    
+    @Autowired
+    AdminService adminService;
+
     @Autowired
     public ProviderController(ProviderService providerService) {
         this.providerService = providerService;
     }
     
+    // Helper method to get provider info
+    private Provider getProviderInfo(int providerId) {
+        return providerService.validateProvider(providerId);
+    }
+    
     // Welcome/Home Page
     @GetMapping("/welcome")
-    public ModelAndView welcomePage() {
-        return new ModelAndView("provider-welcome");
+    public String welcomePage(@RequestParam("providerId") int providerId, Model model) {
+        try {
+            Provider provider = getProviderInfo(providerId);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            return "provider-welcome";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading provider information: " + e.getMessage());
+            return "error";
+        }
     }
     
     // Show claim submission form
     @GetMapping("/submitclaim")
-    public ModelAndView showClaimForm() {
-        ModelAndView mav = new ModelAndView("submit-claim");
-        mav.addObject("claim", new Claim());
-        return mav;
+    public String showClaimForm(@RequestParam("providerId") int providerId, Model model) {
+        try {
+            Provider provider = getProviderInfo(providerId);
+            Claim claim = new Claim();
+            
+            // Auto-set the provider for the claim
+            claim.setProvider(provider);
+            
+            model.addAttribute("claim", claim);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            return "submit-claim";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading claim form: " + e.getMessage());
+            return "error";
+        }
     }
     // Process claim submission
     @PostMapping("/submitclaim")
-    public String submitClaim(@ModelAttribute("claim") Claim claim, Model model) {
+    public String submitClaim(@ModelAttribute("claim") Claim claim,
+                             @RequestParam("providerId") int providerId,
+                             Model model,
+                             RedirectAttributes redirectAttributes) {
         try {
+            // Set provider ID (in case form doesn't bind it properly)
+            Provider provider = new Provider();
+            provider.setProviderId(providerId);
+            claim.setProvider(provider);
+            
             Claim savedClaim = providerService.submitClaim(claim);
-            model.addAttribute("claimId", savedClaim.getClaimId());
-            model.addAttribute("patientId", savedClaim.getPatient().getPatientId());
-            model.addAttribute("billedAmount", savedClaim.getBilledAmount());
-            return "claim-success";
+            
+            redirectAttributes.addFlashAttribute("success", 
+                "Claim #" + savedClaim.getClaimId() + " submitted successfully!");
+            redirectAttributes.addFlashAttribute("claimId", savedClaim.getClaimId());
+            redirectAttributes.addFlashAttribute("patientId", savedClaim.getPatient().getPatientId());
+            redirectAttributes.addFlashAttribute("billedAmount", savedClaim.getBilledAmount());
+            
+            return "redirect:/provider/claim-success?providerId=" + providerId;
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
+            Provider provider = getProviderInfo(providerId);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            model.addAttribute("error", "Failed to submit claim: " + e.getMessage());
+            model.addAttribute("claim", claim);
             return "submit-claim";
         }
     }
     
-    // View all claims
+    // Claim success page
+    @GetMapping("/claim-success")
+    public String claimSuccessPage(@RequestParam("providerId") int providerId, Model model) {
+        try {
+            Provider provider = getProviderInfo(providerId);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            return "claim-success";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading page: " + e.getMessage());
+            return "error";
+        }
+    }
+    
+    // View all claims for this provider
     @GetMapping("/viewclaims")
-    public ModelAndView viewAllClaims() {
-        ModelAndView mav = new ModelAndView("view-claims");
-        List<Claim> claims = providerService.getAllClaims();
-        mav.addObject("claims", claims);
-        return mav;
+    public String viewAllClaims(@RequestParam("providerId") int providerId, Model model) {
+        try {
+            Provider provider = getProviderInfo(providerId);
+            List<Claim> claims = providerService.getClaimsByProviderId(providerId);
+            
+            model.addAttribute("claims", claims);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            return "view-claims";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading claims: " + e.getMessage());
+            return "error";
+        }
     }
     
     // View claim by ID
     @GetMapping("/viewclaim")
-    public String viewClaimById(@RequestParam("claimId") int claimId, Model model) {
+    public String viewClaimById(@RequestParam("claimId") int claimId,
+                               @RequestParam("providerId") int providerId,
+                               Model model) {
         try {
+            Provider provider = getProviderInfo(providerId);
             Claim claim = providerService.getClaimById(claimId);
+            
+            // Security check: ensure claim belongs to logged-in provider
+            if (claim.getProvider().getProviderId() != providerId) {
+                model.addAttribute("error", "Access denied to this claim.");
+                return viewAllClaims(providerId, model);
+            }
+            
             model.addAttribute("claim", claim);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
             return "claim-details";
         } catch (Exception e) {
-            model.addAttribute("error", "Claim not found: " + e.getMessage());
-            return "view-claims";
+            model.addAttribute("error", "Error loading claim: " + e.getMessage());
+            return viewAllClaims(providerId, model);
         }
     }
     
@@ -87,86 +156,100 @@ public class ProviderController {
     @PostMapping("/updatestatus")
     public String updateClaimStatus(@RequestParam("claimId") int claimId,
                                    @RequestParam("status") String status,
-                                   Model model) {
+                                   @RequestParam("providerId") int providerId,
+                                   RedirectAttributes redirectAttributes) {
         try {
+            // First get the claim to check ownership
+            Claim claim = providerService.getClaimById(claimId);
+            if (claim.getProvider().getProviderId() != providerId) {
+                redirectAttributes.addFlashAttribute("error", "Access denied to update this claim.");
+                return "redirect:/provider/viewclaim?claimId=" + claimId + "&providerId=" + providerId;
+            }
+            
             Claim updatedClaim = providerService.updateClaimStatus(claimId, status);
-            model.addAttribute("message", "Status updated to: " + status);
-            model.addAttribute("claim", updatedClaim);
-            return "claim-details";
+            
+            redirectAttributes.addFlashAttribute("success", 
+                "Claim status updated to: " + status);
+            return "redirect:/provider/viewclaim?claimId=" + claimId + "&providerId=" + providerId;
         } catch (Exception e) {
-            model.addAttribute("error", "Failed to update: " + e.getMessage());
-            return "view-claims";
+            redirectAttributes.addFlashAttribute("error", 
+                "Failed to update status: " + e.getMessage());
+            return "redirect:/provider/viewclaim?claimId=" + claimId + "&providerId=" + providerId;
         }
     }
     
     // Delete claim
     @PostMapping("/deleteclaim")
-    public String deleteClaim(@RequestParam("claimId") int claimId, Model model) {
+    public String deleteClaim(@RequestParam("claimId") int claimId,
+                             @RequestParam("providerId") int providerId,
+                             RedirectAttributes redirectAttributes) {
         try {
-            providerService.deleteClaim(claimId);
-            model.addAttribute("message", "Claim deleted successfully!");
-            List<Claim> claims = providerService.getAllClaims();
-            model.addAttribute("claims", claims);
-            return "view-claims";
+            // Service method will check if status = "Submitted"
+            providerService.deleteClaim(claimId, providerId);
+            
+            redirectAttributes.addFlashAttribute("success", 
+                "Claim #" + claimId + " deleted successfully!");
+            return "redirect:/provider/viewclaims?providerId=" + providerId;
         } catch (Exception e) {
-            model.addAttribute("error", "Failed to delete: " + e.getMessage());
-            List<Claim> claims = providerService.getAllClaims();
-            model.addAttribute("claims", claims);
-            return "view-claims";
+            redirectAttributes.addFlashAttribute("error", 
+                "Failed to delete claim: " + e.getMessage());
+            return "redirect:/provider/viewclaims?providerId=" + providerId;
         }
     }
     
     // Search by patient - GET (shows the form page)
     @GetMapping("/searchpatient")
-    public String searchPatientForm() {
-        return "search-patient";
+    public String searchPatientForm(@RequestParam("providerId") int providerId,
+                                   Model model) {
+        try {
+            Provider provider = getProviderInfo(providerId);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
+            return "search-patient";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading search page: " + e.getMessage());
+            return "error";
+        }
     }
     
-    // Search by patient - POST (redirects to view-claims page)
+    // Search by patient - POST
     @PostMapping("/searchpatient")
-    public String searchPatient(@RequestParam("patientId") int patientId, Model model) {
+    public String searchPatient(@RequestParam("patientId") int patientId,
+                               @RequestParam("providerId") int providerId,
+                               Model model) {
         try {
+            Provider provider = getProviderInfo(providerId);
             List<Claim> claims = providerService.getClaimsByPatientId(patientId);
-            model.addAttribute("claims", claims);
+            
+            // Filter claims to only show those belonging to this provider
+            List<Claim> filteredClaims = claims.stream()
+                .filter(claim -> claim.getProvider().getProviderId() == providerId)
+                .toList();
+            
+            model.addAttribute("claims", filteredClaims);
+            model.addAttribute("provider", provider);
+            model.addAttribute("providerId", providerId);
             model.addAttribute("searchType", "Patient ID: " + patientId);
+            model.addAttribute("searchedPatientId", patientId);
             return "view-claims";
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-            return "search-patient";
+            model.addAttribute("error", "Error searching claims: " + e.getMessage());
+            return searchPatientForm(providerId, model);
         }
     }
+    
     @GetMapping("/delete/{id}")
-    public String activityProvider(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+    public String activityProvider(@PathVariable("id") int id, 
+                                  @RequestParam("providerId") int providerId,
+                                  RedirectAttributes redirectAttributes) {
         try {
-            // Service method handles both setting provider isActive=0 and deleting credentials
-            adminsrivice.deactivateProvider(id); 
-            
-            redirectAttributes.addFlashAttribute("success", "Provider ID " + id + " successfully set to Inactive and credentials deleted.");
+            adminService.deactivateProvider(id);
+            redirectAttributes.addFlashAttribute("success", 
+                "Provider ID " + id + " successfully set to Inactive.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to set provider ID " + id + " to inactive: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", 
+                "Failed to set provider ID " + id + " to inactive: " + e.getMessage());
         }
-        
-        // Redirect back to the admin dashboard view (assuming the admin dashboard is mapped to /admin)
-        return "redirect:/admin"; 
-    }
-    
-    
-    
-    // API Endpoint for AJAX Search
-    @GetMapping("/api/patientDetails")
-    @ResponseBody
-    public ResponseEntity<?> getPatientDetailsApi(@RequestParam("patientId") int patientId) {
-        try {
-            // Get patient with claims using ProviderService
-            Map<String, Object> patientData = providerService.getPatientWithClaims(patientId);
-            
-            if (patientData == null) {
-                return ResponseEntity.status(404).body("Patient not found with ID: " + patientId);
-            }
-            
-            return ResponseEntity.ok(patientData);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error fetching patient details: " + e.getMessage());
-        }
+        return "redirect:/admin";
     }
 }

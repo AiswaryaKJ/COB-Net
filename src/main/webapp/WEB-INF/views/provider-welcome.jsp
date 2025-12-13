@@ -1,304 +1,269 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Healthcare Claim Management System Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Provider Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        /* 1. CSS Variables and Base Styles */
-        :root {
-            --primary-color: #007bff; /* Blue for trust and professionalism */
-            --secondary-color: #28a745; /* Green for success/actions */
-            --accent-color: #6c757d; /* Grey for subtle elements */
-            --background-light: #f4f7fa; /* Very light, clean background */
-            --card-background: #ffffff;
-            --text-dark: #343a40;
-            --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--background-light);
-            color: var(--text-dark);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 0;
-        }
-
-        /* 2. Main Container and Welcome Card */
-        .container {
-            max-width: 1200px;
-            padding: 0; /* Remove default container padding */
-        }
-
         .welcome-card {
-            background-color: var(--card-background);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border-radius: 15px;
-            box-shadow: var(--shadow-lg);
             padding: 40px;
-            margin: 20px;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        /* 3. Header Section */
-        .header-section {
-            text-align: center;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #e9ecef;
             margin-bottom: 30px;
         }
-
-        .header-section h1 {
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-            font-size: 2.5rem;
+        .action-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
         }
-
-        .header-section .lead {
-            font-weight: 300;
-            color: var(--accent-color);
-        }
-
-        /* 4. Features Grid */
-        .features-section h2 {
-            font-weight: 500;
-            margin-bottom: 30px;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 50px;
-        }
-
-        .feature-card {
-            background: linear-gradient(145deg, var(--card-background), #f8f9fa);
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .feature-card:hover {
+        .action-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            display: inline-block;
+        .stat-card {
+            background: white;
+            border-left: 4px solid;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-
-        .feature-card h3 {
-            font-size: 1.3rem;
-            font-weight: 500;
-            margin-bottom: 10px;
-        }
-
-        .feature-card p {
-            font-size: 0.95rem;
-            color: var(--accent-color);
-        }
-
-        /* 5. Action Buttons (The most critical part) */
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 40px;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px 30px;
-            border-radius: 50px; /* Pill shape for modern look */
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1.1rem;
-            min-width: 250px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden; /* For ripple effect */
-        }
-
-        /* Color variations for action buttons */
-        .action-btn.btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-        }
-
-        .action-btn.btn-success {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .action-btn.btn-info {
-            background-color: #17a2b8; /* Bootstrap Info default */
-            border-color: #17a2b8;
-            color: white;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-3px);
-            opacity: 0.9;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .action-btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-icon {
-            font-size: 1.4rem;
-            margin-right: 15px;
-        }
-
-        /* 6. Footer Section */
-        .footer-section {
-            text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid #e9ecef;
-            margin-top: 30px;
-            font-size: 0.85rem;
-            color: var(--accent-color);
-        }
-
-        .quick-links {
-            margin-top: 10px;
-        }
-
-        .quick-link {
-            color: var(--accent-color);
-            margin: 0 10px;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .quick-link:hover {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        /* Animation */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .welcome-card {
-                padding: 30px 20px;
-            }
-            .header-section h1 {
-                font-size: 2rem;
-            }
-            .action-buttons {
-                flex-direction: column;
-                gap: 15px;
-            }
-            .action-btn {
-                min-width: 100%;
-            }
-        }
+        .stat-primary { border-color: #007bff; }
+        .stat-success { border-color: #28a745; }
+        .stat-info { border-color: #17a2b8; }
+        .stat-warning { border-color: #ffc107; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="welcome-card">
-            <div class="header-section">
-                <h1><i class="fas fa-heartbeat me-3"></i>Healthcare Claim Management</h1>
-                <p class="lead">Professional Medical Claim Processing System for Healthcare Providers</p>
-            </div>
-            
-            <div class="features-section">
-                <h2 class="text-center mb-4" style="color: var(--primary-color);">System Overview</h2>
-                
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                        <h3>Fast Processing</h3>
-                        <p>Submit and process claims in real-time with automated validation and quick turnaround for payments.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h3>Secure & Compliant</h3>
-                        <p>Fully HIPAA compliant system with 256-bit encryption ensuring total patient data security and privacy.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3>Real-time Analytics</h3>
-                        <p>Track claim status, generate detailed financial reports, and monitor system performance effortlessly.</p>
-                    </div>
-                </div>
-                
-                <h3 class="text-center mb-4" style="color: var(--primary-color);">Quick Actions</h3>
-                <div class="action-buttons">
-                    <a href="submitclaim" class="action-btn btn-primary">
-                        <i class="btn-icon fas fa-file-medical"></i>
-                        <span>Submit New Claim</span>
-                    </a>
-                    
-                    <a href="viewclaims" class="action-btn btn-success">
-                        <i class="btn-icon fas fa-list-alt"></i>
-                        <span>View All Claims</span>
-                    </a>
-                    
-                    <a href="searchpatient" class="action-btn btn-info">
-                        <i class="btn-icon fas fa-search"></i>
-                        <span>Search by Patient</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <p>© 2025 Healthcare Claim Management System. All rights reserved.</p>
-                <div class="quick-links">
-                    <a href="#" class="quick-link">Privacy Policy</a> | 
-                    <a href="#" class="quick-link">Terms of Service</a> | 
-                    <a href="#" class="quick-link">Support Center</a> | 
-                    <a href="#" class="quick-link">Contact Us</a>
-                </div>
-                <p class="mt-3">
-                    <i class="fas fa-phone me-2"></i>Support: 1-800-HEALTH | 
-                    <i class="fas fa-envelope ms-3 me-2"></i>Email: support@healthclaim.com
-                </p>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-hospital-alt text-primary me-2"></i>
+                <span class="fw-bold">Provider Portal</span>
+            </a>
+            <div class="navbar-text">
+                <span class="badge bg-primary">
+                    <i class="fas fa-user-md me-1"></i>${provider.name} (ID: ${providerId})
+                </span>
             </div>
         </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Success/Error Messages -->
+        <c:if test="${not empty success}">
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>${success}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>${error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold">
+                        <i class="fas fa-hand-wave me-3"></i>
+                        Welcome, ${provider.name}!
+                    </h1>
+                    <p class="lead mb-0">
+                        Manage your healthcare claims efficiently with our provider portal.
+                        <c:if test="${provider.specialty != null}">
+                            <br><small>Specialty: ${provider.specialty}</small>
+                        </c:if>
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-light text-dark fs-6 p-3">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Network: ${provider.networkStatusBadge}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card stat-primary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Claims</h6>
+                            <h3 class="mb-0">0</h3>
+                        </div>
+                        <i class="fas fa-file-invoice fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Submitted</h6>
+                            <h3 class="mb-0">0</h3>
+                        </div>
+                        <i class="fas fa-paper-plane fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Processed</h6>
+                            <h3 class="mb-0">0</h3>
+                        </div>
+                        <i class="fas fa-cogs fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-warning">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pending</h6>
+                            <h3 class="mb-0">0</h3>
+                        </div>
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <h3 class="mb-4">
+            <i class="fas fa-bolt text-warning me-2"></i>Quick Actions
+        </h3>
+        
+        <div class="row g-4">
+            <!-- Submit New Claim -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card action-card border-primary">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-file-medical fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">Submit New Claim</h5>
+                        <p class="card-text text-muted">Create and submit a new healthcare claim for a patient.</p>
+                        <a href="/provider/submitclaim?providerId=${providerId}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>New Claim
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- View All Claims -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card action-card border-success">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-list-alt fa-3x text-success"></i>
+                        </div>
+                        <h5 class="card-title">View All Claims</h5>
+                        <p class="card-text text-muted">View and manage all your submitted claims.</p>
+                        <a href="/provider/viewclaims?providerId=${providerId}" 
+                           class="btn btn-success w-100">
+                            <i class="fas fa-eye me-2"></i>View Claims
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search by Patient -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card action-card border-info">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-search fa-3x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Search by Patient</h5>
+                        <p class="card-text text-muted">Search claims by patient ID.</p>
+                        <a href="/provider/searchpatient?providerId=${providerId}" 
+                           class="btn btn-info w-100">
+                            <i class="fas fa-search me-2"></i>Search
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity (Placeholder) -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent activity to display</p>
+                            <p class="small text-muted">Your claims and activities will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>Provider Information
+                    </h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Provider ID:</strong> ${providerId}</li>
+                        <li><strong>Name:</strong> ${provider.name}</li>
+                        <c:if test="${provider.specialty != null}">
+                            <li><strong>Specialty:</strong> ${provider.specialty}</li>
+                        </c:if>
+                        <c:if test="${provider.npi != null}">
+                            <li><strong>NPI:</strong> ${provider.npi}</li>
+                        </c:if>
+                        <li><strong>Network Status:</strong> 
+                            <span class="badge ${provider.networkStatus == 'IN' ? 'bg-success' : 'bg-warning'}">
+                                ${provider.networkStatusBadge}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i> Secure Provider Portal
+                        <br>
+                        <small>Last login: Today at <span id="currentTime"></span></small>
+                    </p>
+                    <a href="/auth/login" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Future JavaScript, e.g., for form validation or dynamic content loading
-        });
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        updateTime();
+        setInterval(updateTime, 60000);
     </script>
 </body>
 </html>
