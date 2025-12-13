@@ -65,7 +65,6 @@ public class ProviderController {
             return "error";
         }
     }
-    
     // Process claim submission
     @PostMapping("/submitclaim")
     public String submitClaim(@ModelAttribute("claim") Claim claim,

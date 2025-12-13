@@ -47,7 +47,6 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="card claim-form-card">
-                    <!-- Header -->
                     <div class="form-header">
                         <h3 class="mb-0">
                             <i class="fas fa-file-medical me-2"></i>Submit New Claim
@@ -58,7 +57,6 @@
                     </div>
 
                     <div class="card-body p-4">
-                        <!-- Error Message -->
                         <c:if test="${not empty error}">
                             <div class="alert alert-danger alert-dismissible fade show">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -67,7 +65,6 @@
                             </div>
                         </c:if>
 
-                        <!-- Provider Info -->
                         <div class="alert alert-info mb-4">
                             <div class="row">
                                 <div class="col-md-6">
@@ -89,13 +86,10 @@
                             </c:if>
                         </div>
 
-                        <!-- Claim Form -->
                         <form action="/provider/submitclaim?providerId=${providerId}" method="post">
-                            <!-- Hidden provider ID -->
                             <input type="hidden" name="provider.providerId" value="${providerId}">
                             
                             <div class="row g-3">
-                                <!-- Patient ID -->
                                 <div class="col-md-6">
                                     <label for="patient.patientId" class="form-label required-field">
                                         <i class="fas fa-user me-2"></i>Patient ID
@@ -115,7 +109,6 @@
                                     </small>
                                 </div>
 
-                                <!-- Billed Amount -->
                                 <div class="col-md-6">
                                     <label for="billedAmount" class="form-label required-field">
                                         <i class="fas fa-dollar-sign me-2"></i>Billed Amount ($)
@@ -137,39 +130,44 @@
                                     </small>
                                 </div>
 
-                                <!-- Diagnosis Code -->
                                 <div class="col-md-6">
                                     <label for="diagnosisCode" class="form-label">
                                         <i class="fas fa-stethoscope me-2"></i>Diagnosis Code (ICD-10)
                                     </label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="diagnosisCode" 
-                                           name="diagnosisCode" 
-                                           value="${claim.diagnosisCode}"
-                                           placeholder="e.g., J06.9">
+                                    <select class="form-select" id="diagnosisCode" name="diagnosisCode">
+                                        <option value="" disabled ${empty claim.diagnosisCode ? 'selected' : ''}>Select Diagnosis Code</option>
+                                        <option value="J06.9" ${claim.diagnosisCode == 'J06.9' ? 'selected' : ''}>J06.9 - Acute upper respiratory infection, unspecified</option>
+                                        <option value="I10" ${claim.diagnosisCode == 'I10' ? 'selected' : ''}>I10 - Essential (primary) hypertension</option>
+                                        <option value="E11.9" ${claim.diagnosisCode == 'E11.9' ? 'selected' : ''}>E11.9 - Type 2 diabetes mellitus without complications</option>
+                                        <option value="K21.9" ${claim.diagnosisCode == 'K21.9' ? 'selected' : ''}>K21.9 - Gastro-esophageal reflux disease without esophagitis</option>
+                                        <option value="M54.5" ${claim.diagnosisCode == 'M54.5' ? 'selected' : ''}>M54.5 - Low back pain</option>
+                                        <option value="Z00.00" ${claim.diagnosisCode == 'Z00.00' ? 'selected' : ''}>Z00.00 - Encounter for general examination without abnormal findings</option>
+                                        <option value="G43.909" ${claim.diagnosisCode == 'G43.909' ? 'selected' : ''}>G43.909 - Migraine, unspecified, not intractable</option>
+                                    </select>
                                     <small class="form-text text-muted">
-                                        Optional: ICD-10 diagnosis code
+                                        Optional: Select ICD-10 diagnosis code
                                     </small>
                                 </div>
 
-                                <!-- Procedure Code -->
                                 <div class="col-md-6">
                                     <label for="procedureCode" class="form-label">
                                         <i class="fas fa-procedures me-2"></i>Procedure Code (CPT)
                                     </label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="procedureCode" 
-                                           name="procedureCode" 
-                                           value="${claim.procedureCode}"
-                                           placeholder="e.g., 99213">
+                                    <select class="form-select" id="procedureCode" name="procedureCode">
+                                        <option value="" disabled ${empty claim.procedureCode ? 'selected' : ''}>Select Procedure Code</option>
+                                        <option value="99213" ${claim.procedureCode == '99213' ? 'selected' : ''}>99213 - Established patient office visit, low complexity</option>
+                                        <option value="99203" ${claim.procedureCode == '99203' ? 'selected' : ''}>99203 - New patient office visit, moderate complexity</option>
+                                        <option value="G0439" ${claim.procedureCode == 'G0439' ? 'selected' : ''}>G0439 - Annual wellness visit</option>
+                                        <option value="80053" ${claim.procedureCode == '80053' ? 'selected' : ''}>80053 - Comprehensive metabolic panel (CMP)</option>
+                                        <option value="90471" ${claim.procedureCode == '90471' ? 'selected' : ''}>90471 - Immunization administration</option>
+                                        <option value="71045" ${claim.procedureCode == '71045' ? 'selected' : ''}>71045 - Chest X-ray, single view</option>
+                                        <option value="12001" ${claim.procedureCode == '12001' ? 'selected' : ''}>12001 - Simple repair of superficial wounds, 2.5 cm or less</option>
+                                    </select>
                                     <small class="form-text text-muted">
-                                        Optional: CPT procedure code
+                                        Optional: Select CPT procedure code
                                     </small>
                                 </div>
 
-                                <!-- Claim Date -->
                                 <div class="col-md-6">
                                     <label for="claimDate" class="form-label required-field">
                                         <i class="fas fa-calendar me-2"></i>Claim Date
@@ -185,7 +183,6 @@
                                     </small>
                                 </div>
 
-                                <!-- Insurance Information (Read-only) -->
                                 <div class="col-12">
                                     <div class="alert alert-light border">
                                         <h6 class="mb-3">
@@ -212,7 +209,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Form Buttons -->
                                 <div class="col-12">
                                     <hr class="my-4">
                                     <div class="d-flex justify-content-between">
@@ -235,7 +231,6 @@
                     </div>
                 </div>
 
-                <!-- Help Section -->
                 <div class="card mt-4 border-info">
                     <div class="card-header bg-info text-white">
                         <h6 class="mb-0">

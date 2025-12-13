@@ -136,26 +136,7 @@
                 
                 if (policies != null && !policies.isEmpty()) {
             %>
-                <!-- Primary Insurance Info Box -->
-                <% if (primaryCopay != null) { %>
-                    <div class="alert alert-info mb-4">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="mb-1"><i class="fas fa-info-circle me-2"></i>Primary Insurance Information</h5>
-                                <p class="mb-0">
-                                    Your primary insurance copay amount is: 
-                                    <strong class="fs-4">$<%= String.format("%.2f", primaryCopay) %></strong><br>
-                                    <small class="text-muted">This amount will be applied to your medical bills.</small>
-                                </p>
-                            </div>
-                            <div class="ms-3">
-                                <a href="bills?patientId=${patientId}" class="btn btn-outline-primary">
-                                    <i class="fas fa-file-invoice-dollar me-2"></i>View Bills
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                <% } %>
+                
                 
                 <!-- Insurance Policies List -->
                 <% 
@@ -281,10 +262,6 @@
             <div class="mt-4 pt-3 border-top text-center">
                 <a href="dashboard?patientId=${patientId}" class="btn btn-outline-secondary me-3">
                     <i class="fas fa-home me-2"></i>Back to Dashboard
-                </a>
-                <a href="bills?patientId=${patientId}" class="btn btn-primary">
-                    <i class="fas fa-file-invoice-dollar me-2"></i>View My Medical Bills
-                </a>
             </div>
         </div>
     </div>
