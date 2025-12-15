@@ -142,6 +142,46 @@
             gap: 10px;
         }
         
+        /* ** NEW STYLES FOR FILTER CONTROLS ** */
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px 25px;
+            background: #eef2f6;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #1a365d;
+            font-size: 13px;
+        }
+        
+        .filter-controls .form-control {
+             /* Reuse form-control style, but adjust width within the flex container */
+             width: 100%;
+             padding: 8px 10px;
+             border-radius: 4px;
+             border: 1px solid #ccc;
+             font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-controls {
+                flex-direction: column;
+            }
+        }
+        /* ** END NEW STYLES FOR FILTER CONTROLS ** */
+        
         .btn {
             padding: 10px 20px;
             border: none;
@@ -389,17 +429,34 @@
                
             </div>
             
+            <%-- START: NEW FILTER CONTROLS --%>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="filterClaimId">Filter by Claim ID</label>
+                    <input type="text" id="filterClaimId" class="form-control" placeholder="Enter Claim ID" onkeyup="filterClaimsTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterPatientId">Filter by Patient ID</label>
+                    <input type="text" id="filterPatientId" class="form-control" placeholder="Enter Patient ID" onkeyup="filterClaimsTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterProviderId">Filter by Provider ID</label>
+                    <input type="text" id="filterProviderId" class="form-control" placeholder="Enter Provider ID" onkeyup="filterClaimsTable()">
+                </div>
+            </div>
+            <%-- END: NEW FILTER CONTROLS --%>
+            
             <c:choose>
                 <c:when test="${not empty claims}">
-                    <table>
+                    <table id="claimsTable">
                         <thead>
                             <tr>
-                                <th>Claim ID</th>
+                                <th>Claim ID</th><%-- Index 0 --%>
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Billed Amount</th>
-                                <th>Patient ID</th>
-                                <th>Provider ID</th>
+                                <th>Patient ID</th><%-- Index 4 --%>
+                                <th>Provider ID</th><%-- Index 5 --%>
                             </tr>
                         </thead>
                         <tbody>
@@ -678,6 +735,60 @@
                 event.target.style.display = 'none';
             }
         }
+        
+        // ** NEW FUNCTION FOR CLAIMS TABLE FILTERING **
+        function filterClaimsTable() {
+            const claimIdFilter = document.getElementById('filterClaimId').value.toUpperCase();
+            const patientIdFilter = document.getElementById('filterPatientId').value.toUpperCase();
+            const providerIdFilter = document.getElementById('filterProviderId').value.toUpperCase();
+            
+            const table = document.getElementById('claimsTable');
+            if (!table) return; // Exit if the table isn't rendered (e.g., no claims)
+            
+            const rows = table.getElementsByTagName('tr');
+
+            // Start from index 1 to skip the header row (thead)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                // Column indices: 0: Claim ID, 4: Patient ID, 5: Provider ID
+                const claimIdCell = cells[0];
+                const patientIdCell = cells[4];
+                const providerIdCell = cells[5];
+                
+                let showRow = true;
+                
+                // 1. Filter by Claim ID (Column 0)
+                if (claimIdFilter) {
+                    // Extract text content and remove the leading "#"
+                    const claimIdText = claimIdCell ? claimIdCell.textContent.replace('#', '').trim().toUpperCase() : '';
+                    if (claimIdText.indexOf(claimIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 2. Filter by Patient ID (Column 4)
+                if (patientIdFilter && showRow) { // Only check if the row is still visible
+                    const patientIdText = patientIdCell ? patientIdCell.textContent.trim().toUpperCase() : '';
+                    if (patientIdText.indexOf(patientIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 3. Filter by Provider ID (Column 5)
+                if (providerIdFilter && showRow) { // Only check if the row is still visible
+                    const providerIdText = providerIdCell ? providerIdCell.textContent.trim().toUpperCase() : '';
+                    if (providerIdText.indexOf(providerIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+
+                // Show or hide the row based on all filter checks
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+        // ** END NEW FUNCTION FOR CLAIMS TABLE FILTERING **
         
         // Refresh claims data
         function refreshClaimsData() {
