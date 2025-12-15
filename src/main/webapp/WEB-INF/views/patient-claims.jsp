@@ -398,9 +398,7 @@
                             <button type="button" class="btn btn-light" onclick="window.print()">
                                 <i class="fas fa-print me-2"></i>Print List
                             </button>
-                            <button type="button" class="btn btn-light">
-                                <i class="fas fa-download me-2"></i>Export
-                            </button>
+                            
                         </div>
                     </div>
                 </div>

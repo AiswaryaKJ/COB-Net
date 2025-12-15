@@ -26,6 +26,11 @@
             padding: 25px; 
             border-radius: 10px; 
             margin-bottom: 30px;
+            
+            /* ** START: NEW STYLES FOR HEADER LAYOUT ** */
+            display: flex;
+            flex-direction: column;
+            position: relative; /* Needed to absolutely position the logout button */
         }
         
         .header h1 { 
@@ -33,6 +38,35 @@
             margin-bottom: 10px;
         }
         
+        /* ** NEW STYLES for the logout block ** */
+        .user-info-logout {
+            position: absolute;
+            top: 25px; /* Aligned with the top padding */
+            right: 25px; /* Aligned with the right padding */
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Spacing between welcome text and logout button */
+        }
+        
+        .welcome-text {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-light {
+            border: 1px solid white;
+            color: white;
+            background-color: transparent;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: white;
+            color: #1a365d; /* Darker text on hover */
+        }
+        /* ** END: NEW STYLES FOR HEADER LAYOUT ** */
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -107,6 +141,52 @@
             align-items: center;
             gap: 10px;
         }
+        
+        /* ** NEW STYLES FOR FILTER CONTROLS ** */
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px 25px;
+            background: #eef2f6;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .filter-group {
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #1a365d;
+            font-size: 13px;
+        }
+        
+        .filter-controls .form-control {
+             /* Reuse form-control style, but adjust width within the grid container */
+             width: 100%;
+             padding: 8px 10px;
+             border-radius: 4px;
+             border: 1px solid #ccc;
+             font-size: 14px;
+        }
+
+        @media (max-width: 1024px) {
+            .filter-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* ** END NEW STYLES FOR FILTER CONTROLS ** */
         
         .btn {
             padding: 10px 20px;
@@ -261,18 +341,7 @@
             box-sizing: border-box;
         }
         
-        .refresh-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
+
         
         .message {
             padding: 15px;
@@ -296,11 +365,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-handshake"></i> COBNet Admin Dashboard</h1>
+            <div class="user-info-logout">
+               <span class="welcome-text">Welcome, ${patientName}!</span>
+               <a href="/auth/app/logout-exit" class="btn btn-sm btn-outline-light">
+                   <i class="fas fa-sign-out-alt"></i> Logout
+               </a>
+           </div>
+           <h1><i class="fas fa-handshake"></i> COBNet Admin Dashboard</h1>
             <p>Real-time Claims & Provider Management</p>
-            <button class="refresh-btn" onclick="refreshClaimsData()">
-                <i class="fas fa-sync-alt"></i> Refresh Data
-            </button>
+            
         </div>
         
         <c:if test="${not empty error}">
@@ -362,17 +435,45 @@
                
             </div>
             
+            <%-- START: FILTER CONTROLS (Updated for 4 filters) --%>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="filterClaimId">Filter by Claim ID</label>
+                    <input type="text" id="filterClaimId" class="form-control" placeholder="Enter Claim ID" onkeyup="filterClaimsTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterPatientId">Filter by Patient ID</label>
+                    <input type="text" id="filterPatientId" class="form-control" placeholder="Enter Patient ID" onkeyup="filterClaimsTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterProviderId">Filter by Provider ID</label>
+                    <input type="text" id="filterProviderId" class="form-control" placeholder="Enter Provider ID" onkeyup="filterClaimsTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterStatus">Filter by Status</label>
+                    <select id="filterStatus" class="form-control" onchange="filterClaimsTable()">
+                        <option value="">All Statuses</option>
+                        <option value="Submitted">Submitted</option>
+                        <option value="Processed">Processed</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Denied">Denied</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
+            </div>
+            <%-- END: FILTER CONTROLS --%>
+            
             <c:choose>
                 <c:when test="${not empty claims}">
-                    <table>
+                    <table id="claimsTable">
                         <thead>
                             <tr>
-                                <th>Claim ID</th>
+                                <th>Claim ID</th><%-- Index 0 --%>
                                 <th>Date</th>
-                                <th>Status</th>
+                                <th>Status</th><%-- Index 2 --%>
                                 <th>Billed Amount</th>
-                                <th>Patient ID</th>
-                                <th>Provider ID</th>
+                                <th>Patient ID</th><%-- Index 4 --%>
+                                <th>Provider ID</th><%-- Index 5 --%>
                             </tr>
                         </thead>
                         <tbody>
@@ -651,6 +752,73 @@
                 event.target.style.display = 'none';
             }
         }
+        
+        // ** UPDATED FUNCTION FOR CLAIMS TABLE FILTERING (Includes Status) **
+        function filterClaimsTable() {
+            // Get filter values
+            const claimIdFilter = document.getElementById('filterClaimId').value.toUpperCase();
+            const patientIdFilter = document.getElementById('filterPatientId').value.toUpperCase();
+            const providerIdFilter = document.getElementById('filterProviderId').value.toUpperCase();
+            const statusFilter = document.getElementById('filterStatus').value.toUpperCase(); // New status filter
+            
+            const table = document.getElementById('claimsTable');
+            if (!table) return; 
+            
+            const rows = table.getElementsByTagName('tr');
+
+            // Start from index 1 to skip the header row (thead)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                // Column indices: 0: Claim ID, 2: Status, 4: Patient ID, 5: Provider ID
+                const claimIdCell = cells[0];
+                const statusCell = cells[2];
+                const patientIdCell = cells[4];
+                const providerIdCell = cells[5];
+                
+                let showRow = true;
+                
+                // 1. Filter by Claim ID (Column 0)
+                if (claimIdFilter) {
+                    const claimIdText = claimIdCell ? claimIdCell.textContent.replace('#', '').trim().toUpperCase() : '';
+                    if (claimIdText.indexOf(claimIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 2. Filter by Patient ID (Column 4)
+                if (patientIdFilter && showRow) { 
+                    const patientIdText = patientIdCell ? patientIdCell.textContent.trim().toUpperCase() : '';
+                    if (patientIdText.indexOf(patientIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 3. Filter by Provider ID (Column 5)
+                if (providerIdFilter && showRow) {
+                    const providerIdText = providerIdCell ? providerIdCell.textContent.trim().toUpperCase() : '';
+                    if (providerIdText.indexOf(providerIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 4. Filter by Status (Column 2) - Check against the claim status text
+                if (statusFilter && showRow) {
+                    // statusCell contains the entire span structure, but textContent will yield the clean status name.
+                    const statusText = statusCell ? statusCell.textContent.trim().toUpperCase() : '';
+                    
+                    // We check if a filter value is selected AND if the row's status does NOT match the filter.
+                    if (statusText !== statusFilter) {
+                        showRow = false;
+                    }
+                }
+
+                // Show or hide the row based on all filter checks
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+        // ** END UPDATED FUNCTION FOR CLAIMS TABLE FILTERING **
         
         // Refresh claims data
         function refreshClaimsData() {

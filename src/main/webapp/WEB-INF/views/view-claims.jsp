@@ -31,6 +31,29 @@
             padding: 20px;
             margin-bottom: 20px;
         }
+        /* Style for the horizontal filter bar */
+        .horizontal-filter-bar {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .horizontal-filter-bar .form-label {
+            font-size: 0.85rem; /* Make labels smaller to save space */
+            font-weight: 600;
+        }
+        .horizontal-filter-bar .form-control, 
+        .horizontal-filter-bar .form-select {
+             /* Ensure consistent sizing */
+             height: calc(1.5em + .5rem + 2px); 
+             padding: .25rem .5rem;
+             font-size: .875rem;
+             border-radius: .2rem;
+        }
+        .filter-buttons {
+            display: flex;
+            align-items: flex-end; /* Align buttons to the bottom of the row */
+            height: 100%;
+        }
     </style>
 </head>
 <body>
@@ -51,7 +74,6 @@
     </nav>
 
     <div class="container">
-        <!-- Success/Error Messages -->
         <c:if test="${not empty success}">
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="fas fa-check-circle me-2"></i>${success}
@@ -65,7 +87,6 @@
             </div>
         </c:if>
 
-        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2><i class="fas fa-list-alt me-2"></i>Your Claims</h2>
@@ -83,49 +104,79 @@
             </div>
         </div>
 
-        <!-- Search Box -->
         <div class="search-box">
-            <h5><i class="fas fa-search me-2"></i>Search Claims</h5>
-            <form action="/provider/searchpatient?providerId=${providerId}" method="post" class="row g-3">
-                <div class="col-md-8">
-                    <label for="patientId" class="form-label">Search by Patient ID</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="number" 
-                               class="form-control" 
-                               id="patientId" 
-                               name="patientId" 
-                               placeholder="Enter Patient ID"
-                               value="${searchedPatientId}">
+            <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Claims Filter Bar</h5>
+            
+            <%-- Unified Filter Bar using a single form and JavaScript for consistency --%>
+            <form action="/provider/searchpatient?providerId=${providerId}" method="post" class="horizontal-filter-bar">
+                <div class="row g-3 align-items-end">
+                    
+                    <%-- 1. Patient ID Search (Backend filter) --%>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="patientId_backend" class="form-label">Patient ID (Backend Search)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="patientId_backend" 
+                                   name="patientId" 
+                                   placeholder="Enter Patient ID"
+                                   value="${searchedPatientId}">
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="d-grid gap-2 d-md-flex">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search me-2"></i>Search
-                        </button>
-                        <c:if test="${not empty searchedPatientId}">
-                            <a href="/provider/viewclaims?providerId=${providerId}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-2"></i>Clear
-                            </a>
-                        </c:if>
+
+                    <%-- 2. Claim ID Filter (Client-side filter) --%>
+                    <div class="col-md-4 col-lg-3">
+                        <div class="form-group">
+                            <label for="filterClaimId" class="form-label">Claim ID (Client Filter)</label>
+                            <input type="text" id="filterClaimId" class="form-control form-control-sm" placeholder="Enter Claim ID" onkeyup="filterClaimsTable()">
+                        </div>
+                    </div>
+                    
+                    <%-- 3. Status Filter (Client-side filter) --%>
+                    <div class="col-md-4 col-lg-3">
+                        <div class="form-group">
+                            <label for="filterStatus" class="form-label">Status (Client Filter)</label>
+                            <select id="filterStatus" class="form-select form-select-sm" onchange="filterClaimsTable()">
+                                <option value="">All Statuses</option>
+                                <option value="Submitted">Submitted</option>
+                                <option value="Processed">Processed</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Denied">Denied</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <%-- 4. Search/Clear Buttons (Aligned with inputs) --%>
+                    <div class="col-12 col-lg-3">
+                        <div class="d-grid gap-2 d-md-flex filter-buttons">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search me-1"></i>Search
+                            </button>
+                            <c:if test="${not empty searchedPatientId}">
+                                <a href="/provider/viewclaims?providerId=${providerId}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-times me-1"></i>Clear Search
+                                </a>
+                            </c:if>
+                        </div>
                     </div>
                 </div>
             </form>
         </div>
 
-        <!-- Claims Table -->
         <c:choose>
             <c:when test="${not empty claims and claims.size() > 0}">
                 <div class="table-responsive">
-                    <table class="table table-hover claims-table">
+                    <table class="table table-hover claims-table" id="claimsTable">
                         <thead>
                             <tr>
-                                <th>Claim ID</th>
-                                <th>Patient ID</th>
+                                <th>Claim ID</th><%-- Index 0 --%>
+                                <th>Patient ID</th><%-- Index 1 --%>
                                 <th>Billed Amount</th>
                                 <th>Date</th>
-                                <th>Status</th>
+                                <th>Status</th><%-- Index 4 --%>
                                 <th>Primary Insurer</th>
                                 <th>Actions</th>
                             </tr>
@@ -146,7 +197,8 @@
                                         </span>
                                     </td>
                                     <td>
-<td>${claim.claimDate}</td>                                    </td>
+                                        ${claim.claimDate}
+                                    </td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${claim.status == 'Submitted'}">
@@ -183,14 +235,12 @@
                                         </c:choose>
                                     </td>
                                     <td class="action-buttons">
-                                        <!-- View Button -->
                                         <a href="/provider/viewclaim?claimId=${claim.claimId}&providerId=${providerId}" 
                                            class="btn btn-sm btn-info" 
                                            title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
-                                        <!-- Delete Button (only for Submitted claims) -->
                                         <c:if test="${claim.status == 'Submitted'}">
                                             <form action="/provider/deleteclaim?providerId=${providerId}" 
                                                   method="POST" 
@@ -216,7 +266,6 @@
                     </table>
                 </div>
 
-                <!-- Summary -->
                 <div class="row mt-4">
                     <div class="col-md-6">
                         <div class="card">
@@ -262,7 +311,6 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <!-- No Claims Found -->
                 <div class="text-center py-5">
                     <div class="mb-4">
                         <i class="fas fa-inbox fa-4x text-muted"></i>
@@ -285,7 +333,6 @@
             </c:otherwise>
         </c:choose>
 
-        <!-- Quick Links -->
         <div class="mt-4 pt-3 border-top">
             <div class="d-flex justify-content-between">
                 <div>
@@ -309,9 +356,56 @@
             return confirm('Are you sure you want to delete Claim #' + claimId + '?\n\nNote: Only claims with "Submitted" status can be deleted.');
         }
         
-        // Auto-focus search input
+        // ** FUNCTION FOR CLAIMS TABLE FILTERING (Client-side) **
+        function filterClaimsTable() {
+            // Get filter values (Claim ID and Status)
+            const claimIdFilter = document.getElementById('filterClaimId').value.toUpperCase();
+            const statusFilter = document.getElementById('filterStatus').value.toUpperCase(); 
+            
+            const table = document.getElementById('claimsTable');
+            if (!table) return; 
+            
+            const rows = table.getElementsByTagName('tr');
+
+            // Start from index 1 to skip the header row (thead)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                // Column indices: 0: Claim ID, 4: Status
+                const claimIdCell = cells[0];
+                const statusCell = cells[4];
+                
+                let showRow = true;
+                
+                // 1. Filter by Claim ID (Column 0)
+                if (claimIdFilter) {
+                    // Extract text content and remove the leading "#"
+                    const claimIdText = claimIdCell ? claimIdCell.textContent.replace('#', '').trim().toUpperCase() : '';
+                    if (claimIdText.indexOf(claimIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 2. Filter by Status (Column 4)
+                if (statusFilter && showRow) {
+                    // statusCell textContent will yield the clean status name (e.g., "Submitted")
+                    const statusText = statusCell ? statusCell.textContent.trim().toUpperCase() : '';
+                    
+                    if (statusText !== statusFilter) {
+                        showRow = false;
+                    }
+                }
+
+                // Show or hide the row based on all filter checks
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+        // ** END FUNCTION FOR CLAIMS TABLE FILTERING **
+        
+        // Auto-focus search input (Updated to use the backend search input, for consistency)
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('patientId');
+            const searchInput = document.getElementById('patientId_backend');
             if (searchInput) {
                 searchInput.focus();
             }

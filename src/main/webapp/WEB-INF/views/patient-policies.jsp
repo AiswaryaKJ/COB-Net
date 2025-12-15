@@ -385,9 +385,7 @@
                                 <button type="button" class="btn btn-light">
                                     <i class="fas fa-print me-2"></i>Print Summary
                                 </button>
-                                <button type="button" class="btn btn-light">
-                                    <i class="fas fa-download me-2"></i>Download
-                                </button>
+                                
                             </div>
                         </c:if>
                     </div>

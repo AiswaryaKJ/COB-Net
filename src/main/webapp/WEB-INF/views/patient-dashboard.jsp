@@ -345,6 +345,7 @@
                     <h5 class="mb-3"><i class="fas fa-bell me-2 text-warning"></i>Important Notices</h5>
                     
                     <div class="alert alert-info">
+<<<<<<< HEAD
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>Payment Reminder:</strong> 
                         <c:choose>
@@ -356,6 +357,26 @@
                                 You have no pending bills at this time.
                             </c:otherwise>
                         </c:choose>
+=======
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-info-circle fa-lg me-3 mt-1"></i>
+                            <div>
+                                <h6 class="fw-semibold mb-2">Payment Reminder</h6>
+                                <p class="mb-0">
+                                    <c:choose>
+                                        <c:when test="${totalPendingBills!=0}">
+                                            You have ${pendingClaims} pending bill${pendingClaims != 1 ? 's' : ''} totaling 
+                                            <strong>$<fmt:formatNumber value="${totalPendingBills}" pattern="#,##0.00"/></strong>. 
+                                            Please settle payments before due dates to avoid late fees.
+                                        </c:when>
+                                        <c:otherwise>
+                                            You have no pending bills at this time. Any new bills will appear here after insurance processing.
+                                        </c:otherwise>
+                                    </c:choose>
+                                </p>
+                            </div>
+                        </div>
+>>>>>>> b0d70cf4ad689909e146a4ad8b92503b97e7bfa2
                     </div>
                     
                     <c:if test="${!hasInsurance}">
@@ -389,14 +410,94 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+<<<<<<< HEAD
         // Auto-hide alerts after 5 seconds
         setTimeout(() => {
+=======
+        // Auto-hide alerts after 8 seconds
+        <!--setTimeout(() => {
+>>>>>>> b0d70cf4ad689909e146a4ad8b92503b97e7bfa2
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
                 const alertInstance = new bootstrap.Alert(alert);
                 alertInstance.close();
             });
+<<<<<<< HEAD
         }, 5000);
+=======
+        }, 8000);-->
+        
+        // Smooth scroll to top on page load
+        window.addEventListener('load', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Add ripple effect to buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn')) {
+                const btn = e.target;
+                const ripple = document.createElement('span');
+                const rect = btn.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.7);
+                    transform: scale(0);
+                    animation: ripple-animation 0.6s linear;
+                    width: ${size}px;
+                    height: ${size}px;
+                    top: ${y}px;
+                    left: ${x}px;
+                    pointer-events: none;
+                `;
+                
+                btn.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            }
+        });
+        
+        // Add CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple-animation {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all cards for animation
+        document.querySelectorAll('.dashboard-card, .summary-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+>>>>>>> b0d70cf4ad689909e146a4ad8b92503b97e7bfa2
     </script>
 </body>
 </html>

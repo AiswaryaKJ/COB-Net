@@ -221,26 +221,7 @@
             </div>
         </div>
 
-        <!-- Recent Activity (Placeholder) -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-history me-2"></i>Recent Activity
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="text-center py-5">
-                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No recent activity to display</p>
-                            <p class="small text-muted">Your claims and activities will appear here.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+       
         <!-- Footer -->
         <footer class="mt-5 pt-4 border-top">
             <div class="row">
