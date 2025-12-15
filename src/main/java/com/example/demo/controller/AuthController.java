@@ -65,13 +65,14 @@ public class AuthController {
                         return "login";
                     }
                 case "PATIENT":
-                	if (stored.getPatient() != null) {
+                    if (stored.getPatient() != null) {
                         int patientId = stored.getPatient().getPatientId();
+                        // This is correct - redirects to patient dashboard
                         return "redirect:/patient/dashboard?patientId=" + patientId;
                     } else {
                         model.addAttribute("error", "No patient linked to this account");
                         return "login";
-                    } 
+                    }
                 case "INSURER":
                     if (stored.getInsurer() != null) {
                         int insurerId = stored.getInsurer().getInsurerId();

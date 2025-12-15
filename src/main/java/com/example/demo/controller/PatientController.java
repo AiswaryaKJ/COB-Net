@@ -1,9 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.bean.Claim;
-import com.example.demo.bean.Patient;
-import com.example.demo.dao.ClaimRepository;
+import com.example.demo.bean.*;
 import com.example.demo.service.PatientService;
+import com.example.demo.dao.CredentialRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,191 +18,335 @@ public class PatientController {
     
     @Autowired
     private PatientService patientService;
+    
     @Autowired
-    private ClaimRepository claimRepository;
+    private CredentialRepository credentialRepository;
+    
+    // Helper method to get patient info
+    private Map<String, Object> getPatientInfo(int patientId) {
+        Credentials creds = credentialRepository.findByPatient_PatientId(patientId)
+            .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + patientId));
+        
+        return Map.of(
+            "patientId", patientId,
+            "patientName", creds.getPatient().getFullName(),
+            "credentials", creds
+        );
+    }
     
     // Patient Dashboard
     @GetMapping("/dashboard")
     public String showDashboard(@RequestParam("patientId") int patientId, Model model) {
         try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            
+            // Get summary data for dashboard
+            List<Claim> recentClaims = patientService.getRecentClaims(patientId, 5);
+            List<Map<String, Object>> insurancePolicies = patientService.getPatientInsurancePolicies(patientId);
+            
+            // Get counts for dashboard cards
+            long totalClaims = patientService.getTotalClaimsCount(patientId);
+            long pendingClaims = patientService.getClaimsCountByStatus(patientId, "Submitted");
+            long processedClaims = patientService.getClaimsCountByStatus(patientId, "Processed");
+            long paidClaims = patientService.getClaimsCountByStatus(patientId, "Paid");
+            
+            // Get total pending bills amount
+            Double totalPendingBills = patientService.getTotalPendingBills(patientId);
+            
             model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("recentClaims", recentClaims);
+            model.addAttribute("insurancePolicies", insurancePolicies);
+            model.addAttribute("totalClaims", totalClaims);
+            model.addAttribute("pendingClaims", pendingClaims);
+            model.addAttribute("processedClaims", processedClaims);
+            model.addAttribute("paidClaims", paidClaims);
+            model.addAttribute("totalPendingBills", totalPendingBills != null ? totalPendingBills : 0.0);
+            model.addAttribute("hasInsurance", !insurancePolicies.isEmpty());
             
             return "patient-dashboard";
             
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading dashboard");
+            model.addAttribute("error", "Error loading dashboard: " + e.getMessage());
             return "error";
         }
     }
     
-    @GetMapping("/insurance")
-    public String viewInsurance(@RequestParam("patientId") int patientId, Model model) {
+    // View Insurance Policies
+    @GetMapping("/policies")
+    public String viewInsurancePolicies(@RequestParam("patientId") int patientId, Model model) {
         try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            List<Map<String, Object>> insurancePolicies = patientService.getPatientInsurancePolicies(patientId);
+            
             model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("insurancePolicies", insurancePolicies);
             
-            List<Map<String, Object>> policies = patientService.getPatientInsurancePolicies(patientId);
-            model.addAttribute("insurancePolicies", policies);
-            
-            // Also add primary copay for the info box
-            Double primaryCopay = patientService.getPrimaryInsuranceCopay(patientId);
-            model.addAttribute("primaryCopay", primaryCopay);
-            
-            return "patient-insurance";
+            return "patient-policies";
             
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading insurance information");
+            model.addAttribute("error", "Error loading insurance policies: " + e.getMessage());
             return "error";
         }
     }
     
-    // View ALL bills (pending and history)
-    @GetMapping("/bills")
-    public String viewAllBills(@RequestParam("patientId") int patientId, Model model) {
+    // View Claims History
+    @GetMapping("/claims")
+    public String viewClaimsHistory(@RequestParam("patientId") int patientId, Model model) {
         try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            List<Claim> claims = patientService.getAllClaims(patientId);
+            
             model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("claims", claims);
             
-            // Get all bills
-            List<Map<String, Object>> allBills = patientService.getAllBills(patientId);
-            model.addAttribute("allBills", allBills);
+            return "patient-claims";
             
-            // Get pending bills count
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading claims: " + e.getMessage());
+            return "error";
+        }
+    }
+    
+    // View Claim Details
+    @GetMapping("/claim/{claimId}")
+    public String viewClaimDetails(@PathVariable("claimId") int claimId,
+                                   @RequestParam("patientId") int patientId,
+                                   Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            Claim claim = patientService.getClaimById(claimId, patientId);
+            
+            if (claim == null) {
+                model.addAttribute("error", "Claim not found or you don't have access");
+                return "error";
+            }
+            
+            // Check if EOB is available
+            boolean eobAvailable = patientService.isEOBAvailable(claimId);
+            
+            model.addAttribute("claim", claim);
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("eobAvailable", eobAvailable);
+            
+            return "patient-claim-details";
+            
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading claim details: " + e.getMessage());
+            return "error";
+        }
+    }
+    
+    // View EOB Details
+    @GetMapping("/eob/{claimId}")
+    public String viewEOBDetails(@PathVariable("claimId") int claimId,
+                                 @RequestParam("patientId") int patientId,
+                                 Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            
+            // Verify patient owns this claim
+            Claim claim = patientService.getClaimById(claimId, patientId);
+            if (claim == null) {
+                model.addAttribute("error", "Claim not found or you don't have access");
+                return "error";
+            }
+            
+            // Check if claim is processed/paid
+            if (!"Processed".equalsIgnoreCase(claim.getStatus()) && 
+                !"Paid".equalsIgnoreCase(claim.getStatus())) {
+                model.addAttribute("error", "EOB is not available yet. Claim status: " + claim.getStatus());
+                return "error";
+            }
+            
+            // Get EOB details
+            Map<String, Object> eobDetails = patientService.getEOBDetails(claimId);
+            
+            model.addAttribute("claim", claim);
+            model.addAttribute("eobDetails", eobDetails);
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            
+            return "patient-eob-details";
+            
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading EOB details: " + e.getMessage());
+            return "error";
+        }
+    }
+    
+    // View Bills (Pending Payments)
+    @GetMapping("/bills")
+    public String viewBills(@RequestParam("patientId") int patientId, Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
             List<Map<String, Object>> pendingBills = patientService.getPendingBills(patientId);
-            model.addAttribute("pendingCount", pendingBills.size());
+            List<Map<String, Object>> paidBills = patientService.getPaidBills(patientId);
             
-            // Get bill history
-            List<Map<String, Object>> billHistory = patientService.getBillHistory(patientId);
-            model.addAttribute("historyCount", billHistory.size());
+            Double totalPendingAmount = pendingBills.stream()
+                .mapToDouble(bill -> (Double) bill.get("amountDue"))
+                .sum();
+            
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("pendingBills", pendingBills);
+            model.addAttribute("paidBills", paidBills);
+            model.addAttribute("totalPendingAmount", totalPendingAmount);
             
             return "patient-bills";
             
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading bills");
+            model.addAttribute("error", "Error loading bills: " + e.getMessage());
             return "error";
         }
     }
     
-    // View only pending bills
-    @GetMapping("/bills/pending")
-    public String viewPendingBills(@RequestParam("patientId") int patientId, Model model) {
-        try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
-            model.addAttribute("patientId", patientId);
-            
-            List<Map<String, Object>> pendingBills = patientService.getPendingBills(patientId);
-            model.addAttribute("pendingBills", pendingBills);
-            
-            return "patient-pending-bills";
-            
-        } catch (Exception e) {
-            model.addAttribute("error", "Error loading pending bills");
-            return "error";
-        }
-    }
-    
-    // View bill history
-    @GetMapping("/bills/history")
-    public String viewBillHistory(@RequestParam("patientId") int patientId, Model model) {
-        try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
-            model.addAttribute("patientId", patientId);
-            
-            List<Map<String, Object>> billHistory = patientService.getBillHistory(patientId);
-            model.addAttribute("billHistory", billHistory);
-            
-            return "patient-bill-history";
-            
-        } catch (Exception e) {
-            model.addAttribute("error", "Error loading bill history");
-            return "error";
-        }
-    }
-    
-    // Show payment page for a specific claim
+    // Show Payment Page
     @GetMapping("/pay")
     public String showPaymentPage(@RequestParam("patientId") int patientId,
                                   @RequestParam("claimId") int claimId,
                                   Model model) {
         try {
-            model.addAttribute("patientId", patientId);
-            model.addAttribute("claimId", claimId);
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
             
-            // Get copay amount
-            Double copayAmount = patientService.getPrimaryInsuranceCopay(patientId);
-            model.addAttribute("copayAmount", copayAmount);
+            // Verify the bill exists and is payable
+            Map<String, Object> billDetails = patientService.getBillDetails(claimId, patientId);
+            if (billDetails == null) {
+                model.addAttribute("error", "Bill not found or already paid");
+                return "error";
+            }
+            
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("claimId", claimId);
+            model.addAttribute("billDetails", billDetails);
+            model.addAttribute("amountDue", billDetails.get("amountDue"));
             
             return "patient-payment";
             
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading payment page");
+            model.addAttribute("error", "Error loading payment page: " + e.getMessage());
             return "error";
         }
     }
     
-    // Process copay payment
+    // Process Payment
     @PostMapping("/pay")
     public String processPayment(@RequestParam("patientId") int patientId,
                                  @RequestParam("claimId") int claimId,
+                                 @RequestParam("paymentMethod") String paymentMethod,
                                  RedirectAttributes redirectAttributes) {
         try {
-            boolean success = patientService.payCopay(claimId);
+            // Process the payment
+            boolean paymentSuccess = patientService.processPayment(claimId, patientId, paymentMethod);
             
-            if (success) {
+            if (paymentSuccess) {
                 redirectAttributes.addFlashAttribute("success", 
-                    "Copay payment recorded successfully! Waiting for provider to process.");
+                    "Payment processed successfully! Your claim status has been updated to 'Paid'.");
             } else {
                 redirectAttributes.addFlashAttribute("error", 
-                    "Failed to process payment. Please try again.");
+                    "Payment failed. Please try again or contact support.");
             }
             
             return "redirect:/patient/bills?patientId=" + patientId;
             
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error processing payment");
+            redirectAttributes.addFlashAttribute("error", 
+                "Error processing payment: " + e.getMessage());
             return "redirect:/patient/bills?patientId=" + patientId;
         }
     }
     
- // View specific bill details - UPDATED
-    @GetMapping("/bill/details")
-    public String viewBillDetails(@RequestParam("patientId") int patientId,
-                                  @RequestParam("claimId") int claimId,
-                                  Model model) {
+    // Payment Confirmation Page
+    @GetMapping("/payment-confirmation")
+    public String showPaymentConfirmation(@RequestParam("patientId") int patientId,
+                                          @RequestParam("claimId") int claimId,
+                                          Model model) {
         try {
-            model.addAttribute("patient", patientService.getPatientById(patientId));
-            model.addAttribute("patientId", patientId);
-            model.addAttribute("claimId", claimId);
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
             
-            // Get the specific claim
-            Claim claim = claimRepository.findById(claimId).orElse(null);
+            // Get payment details
+            Map<String, Object> paymentDetails = patientService.getPaymentDetails(claimId, patientId);
             
-            if (claim != null && claim.getPatient().getPatientId() == patientId) {
-                model.addAttribute("claim", claim);
-                
-                // Get provider name
-                if (claim.getProvider() != null) {
-                    model.addAttribute("providerName", claim.getProvider().getName());
-                }
-                
-                // Get patient name
-                Patient patient = claim.getPatient();
-                String patientName = patient.getFirstName() + " " + patient.getLastName();
-                model.addAttribute("patientName", patientName);
-                
-                // Get primary copay for information (not for payment)
-                Double primaryCopay = patientService.getPrimaryInsuranceCopay(patientId);
-                model.addAttribute("primaryCopay", primaryCopay);
-                
-                return "patient-bill-details";
-            } else {
-                model.addAttribute("error", "Bill not found or access denied");
+            if (paymentDetails == null) {
+                model.addAttribute("error", "Payment details not found");
                 return "error";
             }
             
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("claimId", claimId);
+            model.addAttribute("paymentDetails", paymentDetails);
+            
+            return "patient-payment-confirmation";
+            
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading bill details");
+            model.addAttribute("error", "Error loading confirmation: " + e.getMessage());
+            return "error";
+        }
+    }
+    
+ // View Bill Details
+    @GetMapping("/bill/{claimId}")
+    public String viewBillDetails(@PathVariable("claimId") int claimId,
+                                   @RequestParam("patientId") int patientId,
+                                   Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            
+            // Get bill details from service
+            Map<String, Object> billDetails = patientService.getBillDetails(claimId, patientId);
+            if (billDetails == null) {
+                model.addAttribute("error", "Bill not found or already paid");
+                return "error";
+            }
+            
+            // Get the claim for additional info
+            Claim claim = patientService.getClaimById(claimId, patientId);
+            
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("claim", claim);
+            model.addAttribute("billDetails", billDetails);
+            
+            return "patient-bill-details";
+            
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading bill details: " + e.getMessage());
+            return "error";
+        }
+    }
+
+    // View Receipt (for paid bills)
+    @GetMapping("/receipt/{claimId}")
+    public String viewReceipt(@PathVariable("claimId") int claimId,
+                              @RequestParam("patientId") int patientId,
+                              Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            
+            // Get payment details
+            Map<String, Object> paymentDetails = patientService.getPaymentDetails(claimId, patientId);
+            if (paymentDetails == null) {
+                model.addAttribute("error", "Receipt not found or bill not paid");
+                return "error";
+            }
+            
+            // Get the claim for additional info
+            Claim claim = patientService.getClaimById(claimId, patientId);
+            
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("claim", claim);
+            model.addAttribute("paymentDetails", paymentDetails);
+            
+            return "patient-receipt";
+            
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading receipt: " + e.getMessage());
             return "error";
         }
     }

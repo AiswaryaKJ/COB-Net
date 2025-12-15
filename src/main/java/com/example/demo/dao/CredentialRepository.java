@@ -22,4 +22,11 @@ public interface CredentialRepository extends JpaRepository<Credentials, Integer
  // In CredentialRepository.java
     @Query("SELECT c FROM Credentials c WHERE c.insurer.insurerId = :insurerId")
     Optional<Credentials> findByInsurerInsurerId(@Param("insurerId") int insurerId);
+    
+ // Add if not exists
+    Optional<Credentials> findByPatientPatientId(int patientId);
+    
+    Optional<Credentials> findByPatient_PatientId(int patientId);
+    Optional<Credentials> findByInsurer_InsurerId(int insurerId);
+    Optional<Credentials> findByProvider_ProviderId(int providerId);
 }

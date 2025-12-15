@@ -28,4 +28,6 @@ public interface PatientCoverageRepository extends JpaRepository<PatientCoverage
     
     // Find by plan ID
     List<PatientCoverage> findByPlanId(int planId);
+    
+ // Add if not exists
 }

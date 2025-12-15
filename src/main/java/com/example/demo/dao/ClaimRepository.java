@@ -83,5 +83,10 @@ public interface ClaimRepository extends JpaRepository<Claim, Integer> {
     @Query("SELECT c.insurer.insurerId FROM Credentials c WHERE c.userId = :userId")
     Optional<Integer> findInsurerIdByUserId(@Param("userId") int userId);
     
+ // Add these methods
+    List<Claim> findByPatientPatientIdAndStatus(int patientId, String status);
+    Claim findByClaimIdAndPatientPatientId(int claimId, int patientId);
+    long countByPatientPatientId(int patientId);
+    long countByPatientPatientIdAndStatus(int patientId, String status);
     
 }
