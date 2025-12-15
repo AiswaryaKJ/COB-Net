@@ -220,7 +220,7 @@
                     </a>
                     
                     <c:if test="${hasInsurance}">
-                        <a href="/patient/policies?patientId=${patientId}" class="quick-link">
+                        <a href="/patient/insurance-card?patientId=${patientId}" class="quick-link">
                             <i class="fas fa-id-card me-2 text-warning"></i>
                             <strong>Digital Insurance Card</strong>
                             <small class="text-muted d-block mt-1">View your insurance card</small>

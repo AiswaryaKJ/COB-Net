@@ -28,29 +28,32 @@ public class SecurityConfig {
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
     }
+ // SecurityConfig.java
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         http
-            // 1. ENABLE CORS HERE
             .cors(Customizer.withDefaults())
             
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
               
-            
-                .requestMatchers("/error").permitAll()
+                // -- Public/Permitted Resources --
+                .requestMatchers("/error", "/favicon.ico").permitAll()
+                .requestMatchers("/WEB-INF/views/**").permitAll() // IMPORTANT: Allow direct access to JSPs for forward/include
+
+                // 🔑 Explicitly allow the login and register controllers
+                .requestMatchers("/auth/**").permitAll() 
                 
-                // 2. Allow OPTIONS requests (Pre-flight checks) explicitly
+                // 2. Allow OPTIONS requests (Pre-flight checks)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // -- Authentication --
-                .requestMatchers("/auth/**").permitAll()
-
-                
-                // -- Fallback --
-                .anyRequest().permitAll()
+                // 🛑 CRITICAL FIX: Protect all other endpoints
+                .anyRequest().authenticated()
             )
+            
+            // ⚠️ REMOVED .formLogin() BLOCK (Correct for manual login)
+
             .sessionManagement(session -> session
                 .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
             )
@@ -60,7 +63,7 @@ public class SecurityConfig {
 
         return http.build();
     }
-
+    // ... (rest of the file remains the same)
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
