@@ -219,4 +219,7 @@ public class ProviderService {
         
         return result;
     }
+    public List<Claim> getAllClaims(int providerId) {
+        return claimRepository.findByProviderProviderId(providerId);
+    }
 }

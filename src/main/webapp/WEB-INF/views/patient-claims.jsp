@@ -225,7 +225,7 @@
                         <div class="d-flex justify-content-end">
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-outline-primary active" onclick="filterByStatus('all')">All</button>
-                                <button type="button" class="btn btn-outline-warning" onclick="filterByStatus('submitted')">Pending</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="filterByStatus('submitted')">Submitted</button>
                                 <button type="button" class="btn btn-outline-info" onclick="filterByStatus('processed')">Processed</button>
                                 <button type="button" class="btn btn-outline-success" onclick="filterByStatus('paid')">Paid</button>
                             </div>
@@ -273,13 +273,13 @@
                                             <div class="mb-2">
                                                 <span class="status-badge badge-${claim.status.toLowerCase()}">
                                                     <c:choose>
-                                                        <c:when test="${claim.status == 'Submitted'}">
+                                                        <c:when test="${claim.status == 'submitted'}">
                                                             <i class="fas fa-clock me-1"></i>Pending
                                                         </c:when>
-                                                        <c:when test="${claim.status == 'Processed'}">
+                                                        <c:when test="${claim.status == 'processed'}">
                                                             <i class="fas fa-cogs me-1"></i>Processed
                                                         </c:when>
-                                                        <c:when test="${claim.status == 'Paid'}">
+                                                        <c:when test="${claim.status == 'paid'}">
                                                             <i class="fas fa-check-circle me-1"></i>Paid
                                                         </c:when>
                                                         <c:otherwise>
@@ -302,7 +302,7 @@
                                                 </a>
                                                 
                                                 <c:choose>
-                                                    <c:when test="${claim.status == 'Processed'}">
+                                                    <c:when test="${claim.status == 'processed'}">
                                                         <!-- Show EOB button if available -->
                                                         <a href="/patient/eob/${claim.claimId}?patientId=${patientId}" 
                                                            class="action-btn btn btn-sm btn-outline-info">
@@ -314,7 +314,7 @@
                                                             <i class="fas fa-money-bill-wave me-1"></i>Pay
                                                         </a>
                                                     </c:when>
-                                                    <c:when test="${claim.status == 'Paid'}">
+                                                    <c:when test="${claim.status == 'paid'}">
                                                         <!-- View EOB for paid claims -->
                                                         <a href="/patient/eob/${claim.claimId}?patientId=${patientId}" 
                                                            class="action-btn btn btn-sm btn-outline-success">

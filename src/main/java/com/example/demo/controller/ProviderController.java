@@ -32,13 +32,31 @@ public class ProviderController {
         return providerService.validateProvider(providerId);
     }
     
-    // Welcome/Home Page
+//    // Welcome/Home Page
+//    @GetMapping("/welcome")
+//    public String welcomePage(@RequestParam("providerId") int providerId, Model model) {
+//        try {
+//            Provider provider = getProviderInfo(providerId);
+//            model.addAttribute("provider", provider);
+//            model.addAttribute("providerId", providerId);
+//            return "provider-welcome";
+//        } catch (Exception e) {
+//            model.addAttribute("error", "Error loading provider information: " + e.getMessage());
+//            return "error";
+//        }
+//    }
     @GetMapping("/welcome")
     public String welcomePage(@RequestParam("providerId") int providerId, Model model) {
         try {
             Provider provider = getProviderInfo(providerId);
+            
+            // Get all claims for this provider
+            List<Claim> claims = providerService.getAllClaims(providerId); // You need to create this method
+            
             model.addAttribute("provider", provider);
             model.addAttribute("providerId", providerId);
+            model.addAttribute("claims", claims); // Add this line
+            
             return "provider-welcome";
         } catch (Exception e) {
             model.addAttribute("error", "Error loading provider information: " + e.getMessage());
