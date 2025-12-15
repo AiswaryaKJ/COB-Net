@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -347,6 +348,54 @@ public class PatientController {
             
         } catch (Exception e) {
             model.addAttribute("error", "Error loading receipt: " + e.getMessage());
+            return "error";
+        }
+    }
+    @GetMapping("/insurance-card")
+    public String showInsuranceCard(@RequestParam("patientId") int patientId, Model model) {
+        try {
+            Map<String, Object> patientInfo = getPatientInfo(patientId);
+            
+            // Get primary insurance policy
+            List<Map<String, Object>> insurancePolicies = patientService.getPatientInsurancePolicies(patientId);
+            Map<String, Object> primaryPolicy = null;
+            
+            if (!insurancePolicies.isEmpty()) {
+                // Find primary policy (coverageOrder == 1)
+                primaryPolicy = insurancePolicies.stream()
+                    .filter(policy -> (Integer) policy.get("coverageOrder") == 1)
+                    .findFirst()
+                    .orElse(insurancePolicies.get(0));
+                
+                // Calculate if policy is active based on dates
+                LocalDate today = LocalDate.now();
+                LocalDate effectiveDate = (LocalDate) primaryPolicy.get("effectiveDate");
+                LocalDate terminationDate = (LocalDate) primaryPolicy.get("terminationDate");
+                
+                boolean isActive = false;
+                if (effectiveDate != null) {
+                    if (terminationDate != null) {
+                        // Has both dates
+                        isActive = !today.isBefore(effectiveDate) && !today.isAfter(terminationDate);
+                    } else {
+                        // No termination date
+                        isActive = !today.isBefore(effectiveDate);
+                    }
+                }
+                
+                primaryPolicy.put("isActive", isActive);
+            }
+            
+            model.addAttribute("patientId", patientId);
+            model.addAttribute("patientName", patientInfo.get("patientName"));
+            model.addAttribute("primaryPolicy", primaryPolicy);
+            model.addAttribute("allPolicies", insurancePolicies);
+            model.addAttribute("today", LocalDate.now()); // Add current date
+            
+            return "patient-insurance-card";
+            
+        } catch (Exception e) {
+            model.addAttribute("error", "Error loading insurance card: " + e.getMessage());
             return "error";
         }
     }

@@ -117,9 +117,9 @@
             <div class="section text-center">
                 <h3><i class="fas fa-file-invoice-dollar me-2"></i>Explanation of Benefits</h3>
                 <h5 class="text-muted">Claim #HC-${claim.claimId} - ${patientName}</h5>
-                <div class="payment-status ${claim.status == 'Paid' ? 'status-paid' : 'status-pending'} mt-2">
+                <div class="payment-status ${claim.status == 'paid' ? 'status-paid' : 'status-pending'} mt-2">
                     <c:choose>
-                        <c:when test="${claim.status == 'Paid'}">
+                        <c:when test="${claim.status == 'paid'}">
                             <i class="fas fa-check-circle me-2"></i>PAID
                         </c:when>
                         <c:otherwise>
@@ -426,7 +426,7 @@
                     <div class="col-md-8">
                         <div class="alert alert-light">
                             <c:choose>
-                                <c:when test="${claim.status == 'Paid'}">
+                                <c:when test="${claim.status == 'paid'}">
                                     <h6><i class="fas fa-check-circle text-success me-2"></i>Payment Complete</h6>
                                     <p class="mb-2">This claim has been fully paid. Thank you for your payment!</p>
                                     <p class="mb-0">You can download this EOB as a receipt for your records.</p>
@@ -446,7 +446,7 @@
                     <div class="col-md-4">
                         <div class="d-grid gap-2">
                             <c:choose>
-                                <c:when test="${claim.status == 'Processed'}">
+                                <c:when test="${claim.status == 'processed'}">
                                     <a href="/patient/pay?patientId=${patientId}&claimId=${claim.claimId}" 
                                        class="btn btn-success btn-lg">
                                         <i class="fas fa-credit-card me-2"></i>Pay Now

@@ -91,54 +91,78 @@
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card stat-primary">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Total Claims</h6>
-                            <h3 class="mb-0">0</h3>
-                        </div>
-                        <i class="fas fa-file-invoice fa-2x text-primary"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-success">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Submitted</h6>
-                            <h3 class="mb-0">0</h3>
-                        </div>
-                        <i class="fas fa-paper-plane fa-2x text-success"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-info">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Processed</h6>
-                            <h3 class="mb-0">0</h3>
-                        </div>
-                        <i class="fas fa-cogs fa-2x text-info"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-warning">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Pending</h6>
-                            <h3 class="mb-0">0</h3>
-                        </div>
-                        <i class="fas fa-clock fa-2x text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+		<!-- Quick Stats -->
+		<div class="row mb-4">
+		    <div class="col-md-3">
+		        <div class="stat-card stat-primary">
+		            <div class="d-flex justify-content-between align-items-center">
+		                <div>
+		                    <h6 class="text-muted mb-1">Total Claims</h6>
+		                    <h3 class="mb-0">${not empty claims ? claims.size() : 0}</h3>
+		                </div>
+		                <i class="fas fa-file-invoice fa-2x text-primary"></i>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="stat-card stat-success">
+		            <div class="d-flex justify-content-between align-items-center">
+		                <div>
+		                    <h6 class="text-muted mb-1">Submitted</h6>
+		                    <h3 class="mb-0">
+		                        <c:set var="submittedCount" value="0" />
+		                        <c:forEach var="claim" items="${claims}">
+		                            <c:if test="${claim.status == 'Submitted'}">
+		                                <c:set var="submittedCount" value="${submittedCount + 1}" />
+		                            </c:if>
+		                        </c:forEach>
+		                        ${submittedCount}
+		                    </h3>
+		                </div>
+		                <i class="fas fa-paper-plane fa-2x text-success"></i>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="stat-card stat-info">
+		            <div class="d-flex justify-content-between align-items-center">
+		                <div>
+		                    <h6 class="text-muted mb-1">Processed</h6>
+		                    <h3 class="mb-0">
+		                        <c:set var="processedCount" value="0" />
+		                        <c:forEach var="claim" items="${claims}">
+		                            <c:if test="${claim.status == 'Processed'}">
+		                                <c:set var="processedCount" value="${processedCount + 1}" />
+		                            </c:if>
+		                        </c:forEach>
+		                        ${processedCount}
+		                    </h3>
+		                </div>
+		                <i class="fas fa-cogs fa-2x text-info"></i>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="stat-card stat-warning">
+		            <div class="d-flex justify-content-between align-items-center">
+		                <div>
+		                    <h6 class="text-muted mb-1">Pending</h6>
+		                    <h3 class="mb-0">
+		                        <!-- If "Pending" means "Submitted", use the same count -->
+		                        <c:set var="pendingCount" value="0" />
+		                        <c:forEach var="claim" items="${claims}">
+		                            <c:if test="${claim.status == 'Submitted'}">
+		                                <c:set var="pendingCount" value="${pendingCount + 1}" />
+		                            </c:if>
+		                        </c:forEach>
+		                        ${pendingCount}
+		                    </h3>
+		                </div>
+		                <i class="fas fa-clock fa-2x text-warning"></i>
+		            </div>
+		        </div>
+		    </div>
+		</div>
         <!-- Quick Actions -->
         <h3 class="mb-4">
             <i class="fas fa-bolt text-warning me-2"></i>Quick Actions

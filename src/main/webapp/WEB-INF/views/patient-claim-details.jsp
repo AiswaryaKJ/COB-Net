@@ -174,13 +174,13 @@
                 <div>
                     <span class="status-badge-large badge-${claim.status.toLowerCase()}">
                         <c:choose>
-                            <c:when test="${claim.status == 'Submitted'}">
+                            <c:when test="${claim.status == 'submitted'}">
                                 <i class="fas fa-clock me-2"></i>Pending Review
                             </c:when>
-                            <c:when test="${claim.status == 'Processed'}">
+                            <c:when test="${claim.status == 'processed'}">
                                 <i class="fas fa-cogs me-2"></i>Processed
                             </c:when>
-                            <c:when test="${claim.status == 'Paid'}">
+                            <c:when test="${claim.status == 'paid'}">
                                 <i class="fas fa-check-circle me-2"></i>Paid
                             </c:when>
                             <c:otherwise>
@@ -227,7 +227,7 @@
                     </div>
                     
                     <!-- Patient Responsibility -->
-                    <c:if test="${claim.status == 'Processed' or claim.status == 'Paid'}">
+                    <c:if test="${claim.status == 'processed' or claim.status == 'paid'}">
                         <div class="info-section">
                             <h5 class="mb-3"><i class="fas fa-calculator me-2"></i>Patient Responsibility</h5>
                             <div class="row">
@@ -239,7 +239,7 @@
                                         </div>
                                         <div class="amount-label">
                                             <c:choose>
-                                                <c:when test="${claim.status == 'Paid'}">
+                                                <c:when test="${claim.status == 'paid'}">
                                                     <i class="fas fa-check-circle me-1"></i>Paid on ${claim.claimDate}
                                                 </c:when>
                                                 <c:otherwise>
@@ -308,7 +308,7 @@
                             </div>
                             
                             <c:choose>
-                                <c:when test="${claim.status == 'Submitted'}">
+                                <c:when test="${claim.status == 'submitted'}">
                                     <div class="timeline-item current">
                                         <h6>Under Review</h6>
                                         <p class="text-muted small mb-0">Current Status</p>
@@ -328,7 +328,7 @@
                                     </div>
                                 </c:when>
                                 
-                                <c:when test="${claim.status == 'Processed'}">
+                                <c:when test="${claim.status == 'processed'}">
                                     <div class="timeline-item completed">
                                         <h6>Under Review</h6>
                                         <p class="text-muted small mb-0">Completed</p>
@@ -348,7 +348,7 @@
                                     </div>
                                 </c:when>
                                 
-                                <c:when test="${claim.status == 'Paid'}">
+                                <c:when test="${claim.status == 'paid'}">
                                     <div class="timeline-item completed">
                                         <h6>Under Review</h6>
                                         <p class="text-muted small mb-0">Completed</p>
@@ -392,7 +392,7 @@
                             </c:if>
                             
                             <!-- Pay Bill -->
-                            <c:if test="${claim.status == 'Processed'}">
+                            <c:if test="${claim.status == 'processed'}">
                                 <div class="col-12">
                                     <a href="/patient/pay?patientId=${patientId}&claimId=${claim.claimId}" 
                                        class="action-card text-decoration-none">
