@@ -26,6 +26,11 @@
             padding: 25px; 
             border-radius: 10px; 
             margin-bottom: 30px;
+            
+            /* ** START: NEW STYLES FOR HEADER LAYOUT ** */
+            display: flex;
+            flex-direction: column;
+            position: relative; /* Needed to absolutely position the logout button */
         }
         
         .header h1 { 
@@ -33,6 +38,35 @@
             margin-bottom: 10px;
         }
         
+        /* ** NEW STYLES for the logout block ** */
+        .user-info-logout {
+            position: absolute;
+            top: 25px; /* Aligned with the top padding */
+            right: 25px; /* Aligned with the right padding */
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Spacing between welcome text and logout button */
+        }
+        
+        .welcome-text {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-light {
+            border: 1px solid white;
+            color: white;
+            background-color: transparent;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: white;
+            color: #1a365d; /* Darker text on hover */
+        }
+        /* ** END: NEW STYLES FOR HEADER LAYOUT ** */
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -261,18 +295,7 @@
             box-sizing: border-box;
         }
         
-        .refresh-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
+
         
         .message {
             padding: 15px;
@@ -296,11 +319,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-handshake"></i> COBNet Admin Dashboard</h1>
+            <div class="user-info-logout">
+               <span class="welcome-text">Welcome, ${patientName}!</span>
+               <a href="/auth/app/logout-exit" class="btn btn-sm btn-outline-light">
+                   <i class="fas fa-sign-out-alt"></i> Logout
+               </a>
+           </div>
+           <h1><i class="fas fa-handshake"></i> COBNet Admin Dashboard</h1>
             <p>Real-time Claims & Provider Management</p>
-            <button class="refresh-btn" onclick="refreshClaimsData()">
-                <i class="fas fa-sync-alt"></i> Refresh Data
-            </button>
+            
         </div>
         
         <c:if test="${not empty error}">
