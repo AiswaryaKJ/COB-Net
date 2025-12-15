@@ -408,36 +408,10 @@
                             </c:if>
                             
                             <!-- Download Documents -->
-                            <div class="col-12">
-                                <div class="action-card">
-                                    <div class="action-icon icon-primary">
-                                        <i class="fas fa-download"></i>
-                                    </div>
-                                    <h6>Download Documents</h6>
-                                    <p class="text-muted small mb-0">
-                                        Download claim summary and receipts
-                                    </p>
-                                    <button class="btn btn-sm btn-outline-primary mt-2">
-                                        <i class="fas fa-file-pdf me-1"></i>PDF
-                                    </button>
-                                </div>
-                            </div>
+                            
                             
                             <!-- Get Help -->
-                            <div class="col-12">
-                                <div class="action-card">
-                                    <div class="action-icon icon-warning">
-                                        <i class="fas fa-question-circle"></i>
-                                    </div>
-                                    <h6>Need Help?</h6>
-                                    <p class="text-muted small mb-0">
-                                        Contact support for questions about this claim
-                                    </p>
-                                    <button class="btn btn-sm btn-outline-warning mt-2">
-                                        <i class="fas fa-phone me-1"></i>Contact
-                                    </button>
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -459,9 +433,7 @@
                             <button type="button" class="btn btn-light" onclick="window.print()">
                                 <i class="fas fa-print me-2"></i>Print Details
                             </button>
-                            <button type="button" class="btn btn-light">
-                                <i class="fas fa-share-alt me-2"></i>Share
-                            </button>
+                            
                         </div>
                     </div>
                 </div>

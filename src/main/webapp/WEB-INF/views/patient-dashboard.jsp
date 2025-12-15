@@ -976,7 +976,7 @@
                                 <h6 class="fw-semibold mb-2">Payment Reminder</h6>
                                 <p class="mb-0">
                                     <c:choose>
-                                        <c:when test="${totalPendingBills > 0}">
+                                        <c:when test="${totalPendingBills!=0}">
                                             You have ${pendingClaims} pending bill${pendingClaims != 1 ? 's' : ''} totaling 
                                             <strong>$<fmt:formatNumber value="${totalPendingBills}" pattern="#,##0.00"/></strong>. 
                                             Please settle payments before due dates to avoid late fees.
@@ -1058,13 +1058,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Auto-hide alerts after 8 seconds
-        setTimeout(() => {
+        <!--setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
                 const alertInstance = new bootstrap.Alert(alert);
                 alertInstance.close();
             });
-        }, 8000);
+        }, 8000);-->
         
         // Smooth scroll to top on page load
         window.addEventListener('load', () => {
