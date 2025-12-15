@@ -144,7 +144,8 @@
         
         /* ** NEW STYLES FOR FILTER CONTROLS ** */
         .filter-controls {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
             gap: 15px;
             margin-bottom: 20px;
             padding: 15px 25px;
@@ -154,7 +155,6 @@
         }
         
         .filter-group {
-            flex: 1;
             min-width: 150px;
         }
 
@@ -167,7 +167,7 @@
         }
         
         .filter-controls .form-control {
-             /* Reuse form-control style, but adjust width within the flex container */
+             /* Reuse form-control style, but adjust width within the grid container */
              width: 100%;
              padding: 8px 10px;
              border-radius: 4px;
@@ -175,9 +175,15 @@
              font-size: 14px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .filter-controls {
-                flex-direction: column;
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .filter-controls {
+                grid-template-columns: 1fr;
             }
         }
         /* ** END NEW STYLES FOR FILTER CONTROLS ** */
@@ -429,7 +435,7 @@
                
             </div>
             
-            <%-- START: NEW FILTER CONTROLS --%>
+            <%-- START: FILTER CONTROLS (Updated for 4 filters) --%>
             <div class="filter-controls">
                 <div class="filter-group">
                     <label for="filterClaimId">Filter by Claim ID</label>
@@ -443,8 +449,19 @@
                     <label for="filterProviderId">Filter by Provider ID</label>
                     <input type="text" id="filterProviderId" class="form-control" placeholder="Enter Provider ID" onkeyup="filterClaimsTable()">
                 </div>
+                <div class="filter-group">
+                    <label for="filterStatus">Filter by Status</label>
+                    <select id="filterStatus" class="form-control" onchange="filterClaimsTable()">
+                        <option value="">All Statuses</option>
+                        <option value="Submitted">Submitted</option>
+                        <option value="Processed">Processed</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Denied">Denied</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
             </div>
-            <%-- END: NEW FILTER CONTROLS --%>
+            <%-- END: FILTER CONTROLS --%>
             
             <c:choose>
                 <c:when test="${not empty claims}">
@@ -453,7 +470,7 @@
                             <tr>
                                 <th>Claim ID</th><%-- Index 0 --%>
                                 <th>Date</th>
-                                <th>Status</th>
+                                <th>Status</th><%-- Index 2 --%>
                                 <th>Billed Amount</th>
                                 <th>Patient ID</th><%-- Index 4 --%>
                                 <th>Provider ID</th><%-- Index 5 --%>
@@ -736,14 +753,16 @@
             }
         }
         
-        // ** NEW FUNCTION FOR CLAIMS TABLE FILTERING **
+        // ** UPDATED FUNCTION FOR CLAIMS TABLE FILTERING (Includes Status) **
         function filterClaimsTable() {
+            // Get filter values
             const claimIdFilter = document.getElementById('filterClaimId').value.toUpperCase();
             const patientIdFilter = document.getElementById('filterPatientId').value.toUpperCase();
             const providerIdFilter = document.getElementById('filterProviderId').value.toUpperCase();
+            const statusFilter = document.getElementById('filterStatus').value.toUpperCase(); // New status filter
             
             const table = document.getElementById('claimsTable');
-            if (!table) return; // Exit if the table isn't rendered (e.g., no claims)
+            if (!table) return; 
             
             const rows = table.getElementsByTagName('tr');
 
@@ -752,8 +771,9 @@
                 const row = rows[i];
                 const cells = row.getElementsByTagName('td');
                 
-                // Column indices: 0: Claim ID, 4: Patient ID, 5: Provider ID
+                // Column indices: 0: Claim ID, 2: Status, 4: Patient ID, 5: Provider ID
                 const claimIdCell = cells[0];
+                const statusCell = cells[2];
                 const patientIdCell = cells[4];
                 const providerIdCell = cells[5];
                 
@@ -761,7 +781,6 @@
                 
                 // 1. Filter by Claim ID (Column 0)
                 if (claimIdFilter) {
-                    // Extract text content and remove the leading "#"
                     const claimIdText = claimIdCell ? claimIdCell.textContent.replace('#', '').trim().toUpperCase() : '';
                     if (claimIdText.indexOf(claimIdFilter) === -1) {
                         showRow = false;
@@ -769,7 +788,7 @@
                 }
                 
                 // 2. Filter by Patient ID (Column 4)
-                if (patientIdFilter && showRow) { // Only check if the row is still visible
+                if (patientIdFilter && showRow) { 
                     const patientIdText = patientIdCell ? patientIdCell.textContent.trim().toUpperCase() : '';
                     if (patientIdText.indexOf(patientIdFilter) === -1) {
                         showRow = false;
@@ -777,9 +796,20 @@
                 }
                 
                 // 3. Filter by Provider ID (Column 5)
-                if (providerIdFilter && showRow) { // Only check if the row is still visible
+                if (providerIdFilter && showRow) {
                     const providerIdText = providerIdCell ? providerIdCell.textContent.trim().toUpperCase() : '';
                     if (providerIdText.indexOf(providerIdFilter) === -1) {
+                        showRow = false;
+                    }
+                }
+                
+                // 4. Filter by Status (Column 2) - Check against the claim status text
+                if (statusFilter && showRow) {
+                    // statusCell contains the entire span structure, but textContent will yield the clean status name.
+                    const statusText = statusCell ? statusCell.textContent.trim().toUpperCase() : '';
+                    
+                    // We check if a filter value is selected AND if the row's status does NOT match the filter.
+                    if (statusText !== statusFilter) {
                         showRow = false;
                     }
                 }
@@ -788,7 +818,7 @@
                 row.style.display = showRow ? '' : 'none';
             }
         }
-        // ** END NEW FUNCTION FOR CLAIMS TABLE FILTERING **
+        // ** END UPDATED FUNCTION FOR CLAIMS TABLE FILTERING **
         
         // Refresh claims data
         function refreshClaimsData() {
